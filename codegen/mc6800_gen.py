@@ -88,24 +88,24 @@ ops = [
         [[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___]],
 
         # NEG         # --         # --         # COM        # LSR        # --         # ROR        # ASR        # ASL        # ROL        # DEC        # --         # INC        # TST        # JMP        # CLR
-        [[A_IDX,M_R_],[A____,M___],[A____,M___],[A_IDX,M_R_],[A_IDX,M__W],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_]],
-        [[A_ABS,M_R_],[A____,M___],[A____,M___],[A_ABS,M_R_],[A_ABS,M__W],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_]],
+        [[A_IDX,M_R_],[A____,M___],[A____,M___],[A_IDX,M_R_],[A_IDX,M__W],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_RW],[A____,M___],[A_IDX,M_RW],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_]],
+        [[A_ABS,M_R_],[A____,M___],[A____,M___],[A_ABS,M_R_],[A_ABS,M__W],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_RW],[A____,M___],[A_ABS,M_RW],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_]],
     ],
     # aa = 10
     [
         # SUBA        # CMPA       # SBCA       # --         # ANDA       # BITA       # LDAA       # STAA       # EORA       # ADCA       # ORAA       # ADDA       # CPXA       # BSR/JSR    # LDS        # STS
-        [[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___]],
-        [[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_]],
-        [[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_]],
-        [[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_]],
+        [[A_IMM,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___]],
+        [[A_ZER,M___],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M___],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_]],
+        [[A_IDX,M___],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M___],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_]],
+        [[A_ABS,M___],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M___],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_]],
     ],
     # aa = 11
     [
         # SUBB        # CMPB       # SBCB       # --         # ANDB       # BITB       # LDAB       # STAB       # EORB       # ADCB       # ORAB       # ADDB       # --        # --         # LDX        # STX
-        [[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A____,M___],[A_IMM,M_R_],[A____,M___]],
-        [[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A____,M___],[A_ZER,M_R_],[A_ZER,M_R_]],
-        [[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_]],
-        [[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_]],
+        [[A_IMM,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M___],[A____,M___],[A____,M___],[A_IMM,M_R_],[A____,M___]],
+        [[A_ZER,M___],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M___],[A____,M___],[A____,M___],[A_ZER,M_R_],[A_ZER,M_R_]],
+        [[A_IDX,M___],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M___],[A____,M___],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_]],
+        [[A_ABS,M___],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M___],[A____,M___],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_]],
     ]
 ]
 
@@ -166,9 +166,8 @@ def invalid_opcode(op):
 #-------------------------------------------------------------------------------
 def enc_addr(op, addr_mode, mem_access):
     if addr_mode == A____:
-        # no addressing, this still puts the PC on the address bus without 
-        # incrementing the PC
-        op.t('_SA(c->PC);')
+        # no addressing
+        pass
     elif addr_mode == A_IMM:
         # immediate mode
         op.t('_SA(c->PC++);')
@@ -176,17 +175,19 @@ def enc_addr(op, addr_mode, mem_access):
         # zero page
         op.t('_SA(c->PC++);')
         op.t('_SA(_GD());')
-        if mem_access == M__W:
+        if mem_access in [M__W, M_RW]:
             op.ta('_VMA();') # VMA is low, calculating address
-            op.t('') # VMA is high, continue
+            if mem_access == M_RW:
+                op.t('') # wait on next instruction for read fetch
     elif addr_mode == A_ABS:
         # absolute
         op.t('_SA(c->PC++);')
         op.t('_SA(c->PC++);c->AD=_GD();')
-        op.t('_SA((_GD()<<8)|c->AD);')
-        if mem_access == M__W:
+        op.t('_SA(_GD()|(c->AD<<8));')
+        if mem_access in [M__W, M_RW]:
             op.ta('_VMA();') # VMA is low, calculating address
-            op.t('') # VMA is high, continue
+            if mem_access == M_RW:
+                op.t('') # wait on next instruction for read fetch
     elif addr_mode == A_IDX:
         # (zp,X)
         op.t('_SA(c->PC++);')
@@ -221,6 +222,46 @@ def i_swi(o):
     o.t('11')
 
 #-------------------------------------------------------------------------------
+def i_deca(o):
+    cmt(o, 'DECA')
+    o.t('c->A--;_NZ(c->A);')
+
+#-------------------------------------------------------------------------------
+def i_decb(o):
+    cmt(o, 'DECB')
+    o.t('c->B--;_NZ(c->B);')
+
+#-------------------------------------------------------------------------------
+def i_dec(o):
+    cmt(o, 'DEC')
+    o.t('c->AD=_GD()-1;_NZ(c->AD);_SD(c->AD);_WR();')
+
+#-------------------------------------------------------------------------------
+def i_inca(o):
+    cmt(o, 'INCA')
+    o.t('c->A++;_NZ(c->A);')
+
+#-------------------------------------------------------------------------------
+def i_incb(o):
+    cmt(o, 'INCB')
+    o.t('c->B++;_NZ(c->B);')
+
+#-------------------------------------------------------------------------------
+def i_inc(o):
+    cmt(o, 'INC')
+    o.t('c->AD=_GD()+1;_NZ(c->AD);_SD(c->AD);_WR();')
+
+#-------------------------------------------------------------------------------
+def i_suba(o):
+    cmt(o, 'SUBA')
+    o.t('c->A-=_GD();_NZ(c->A);')
+
+#-------------------------------------------------------------------------------
+def i_subb(o):
+    cmt(o, 'SUBB')
+    o.t('c->B-=_GD();_NZ(c->B);')
+
+#-------------------------------------------------------------------------------
 def i_ldaa(o):
     cmt(o,'LDAA')
     o.t('c->A=_GD();_NZ(c->A);')
@@ -233,12 +274,22 @@ def i_ldab(o):
 #-------------------------------------------------------------------------------
 def i_staa(o):
     cmt(o,'STAA')
-    o.ta('_SD(c->A);_WR();')
+    o.t('_SD(c->A);_WR();')
 
 #-------------------------------------------------------------------------------
 def i_stab(o):
     cmt(o,'STAB')
-    o.ta('_SD(c->B);_WR();')
+    o.t('_SD(c->B);_WR();')
+
+#-------------------------------------------------------------------------------
+def i_adda(o):
+    cmt(o, 'ADDA')
+    o.t('c->A+=_GD();_NZ(c->A);')
+
+#-------------------------------------------------------------------------------
+def i_addb(o):
+    cmt(o, 'ADDB')
+    o.t('c->B+=_GD();_NZ(c->B);')
 
 #-------------------------------------------------------------------------------
 def enc_op(op):
@@ -259,9 +310,19 @@ def enc_op(op):
     if aa == 0:
         i_nop(o)
     elif aa == 1:
-        i_nop(o)
+        if cccc == 10:       # DEC
+            if bb == 0:        i_deca(o)
+            elif bb == 1:        i_decb(o)
+            elif bb == 2:        i_dec(o)
+            elif bb == 3:        i_dec(o)
+        elif cccc == 12:     # INC
+            if bb == 0:        i_inca(o)
+            elif bb == 1:        i_incb(o)
+            elif bb == 2:        i_inc(o)
+            elif bb == 3:        i_inc(o)
+        else:                i_nop(o)
     elif aa == 2:
-        if cccc == 0:        i_nop(o)
+        if cccc == 0:        i_suba(o)
         if cccc == 1:        i_nop(o)
         if cccc == 2:        i_nop(o)
         if cccc == 3:        i_nop(o)
@@ -274,13 +335,13 @@ def enc_op(op):
         if cccc == 8:        i_nop(o)
         if cccc == 9:        i_nop(o)
         if cccc == 10:       i_nop(o)
-        if cccc == 11:       i_nop(o)
+        if cccc == 11:       i_adda(o)
         if cccc == 12:       i_nop(o)
         if cccc == 13:       i_nop(o)
         if cccc == 14:       i_nop(o)
         if cccc == 15:       i_nop(o)
     elif aa == 3:
-        if cccc == 0:        i_nop(o)
+        if cccc == 0:        i_subb(o)
         if cccc == 1:        i_nop(o)
         if cccc == 2:        i_nop(o)
         if cccc == 3:        i_nop(o)
@@ -293,16 +354,21 @@ def enc_op(op):
         if cccc == 8:        i_nop(o)
         if cccc == 9:        i_nop(o)
         if cccc == 10:       i_nop(o)
-        if cccc == 11:       i_nop(o)
+        if cccc == 11:       i_addb(o)
         if cccc == 12:       i_nop(o)
         if cccc == 13:       i_nop(o)
         if cccc == 14:       i_nop(o)
         if cccc == 15:       i_nop(o)
 
-    # fetch next opcode byte
-    if mem_access in [M_R_,M___]:
+    # since read operation is actually done on clock
+    # phase 2 but we required another cycle,
+    # we make up for the lost cycle by early-loading the
+    # next instruction
+    if mem_access == M_R_:
         o.ta('_FETCH();')
     else:
+        if mem_access == M___:
+            o.ta('_VMA();') # no memory instruction
         o.t('_FETCH();')
     return o
 
@@ -317,3 +383,6 @@ with open(InpPath, 'r') as inf:
     c_src = templ.safe_substitute(decode_block=out_lines)
     with open(OutPath, 'w') as outf:
         outf.write(c_src)
+
+# TODO
+# fix SUB and ADD instructions cycle count (must be 3 instead of 4 on dir mode)
