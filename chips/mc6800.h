@@ -263,14 +263,14 @@ static inline void _mc6800_add(mc6800_t* cpu, uint8_t val, bool a, bool carry_mo
 static inline void _mc6800_sub(mc6800_t* cpu, uint8_t val, bool a, bool carry_mode) {
     uint16_t diff = (a?cpu->A:cpu->B) - val;
     if (carry_mode) {
-        diff -= cpu->P & MC6800_CF ? 0 : 1;
+        diff -= cpu->P & MC6800_CF ? 1 : 0;
     }
     cpu->P &= ~(MC6800_VF|MC6800_CF);
     cpu->P = _MC6800_NZ(cpu->P, (uint8_t)diff);
     if (((a?cpu->A:cpu->B)^val) & ((a?cpu->A:cpu->B)^diff) & 0x80) {
         cpu->P |= MC6800_VF;
     }
-    if (!(diff & 0xFF00)) {
+    if (diff & 0xFF00) {
         cpu->P |= MC6800_CF;
     }
     if (a) {
