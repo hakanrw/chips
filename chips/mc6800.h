@@ -1968,7 +1968,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x5B<<4)|14: assert(false);break;
         case (0x5B<<4)|15: assert(false);break;
     /* INCB  */
-        case (0x5C<<4)|0: _VF(c->A,0x7F);c->B++;_NZ(c->B);_VMA();break;
+        case (0x5C<<4)|0: _VF(c->B,0x7F);c->B++;_NZ(c->B);_VMA();break;
         case (0x5C<<4)|1: _FETCH();break;
         case (0x5C<<4)|2: assert(false);break;
         case (0x5C<<4)|3: assert(false);break;

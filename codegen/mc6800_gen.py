@@ -222,14 +222,9 @@ def i_swi(o):
     o.t('11')
 
 #-------------------------------------------------------------------------------
-def i_deca(o):
-    cmt(o, 'DECA')
-    o.t('_VF(c->A,0x80);c->A--;_NZ(c->A);')
-
-#-------------------------------------------------------------------------------
-def i_decb(o):
-    cmt(o, 'DECB')
-    o.t('_VF(c->B,0x80);c->B--;_NZ(c->B);')
+def i_decx(o,x):
+    cmt(o, 'DEC'+x)
+    o.t(f'_VF(c->{x},0x80);c->{x}--;_NZ(c->{x});')
 
 #-------------------------------------------------------------------------------
 def i_dec(o):
@@ -237,14 +232,9 @@ def i_dec(o):
     o.t('_VF(_GD(),0x80);c->AD=_GD()-1;_NZ(c->AD);_SD(c->AD);_WR();')
 
 #-------------------------------------------------------------------------------
-def i_inca(o):
-    cmt(o, 'INCA')
-    o.t('_VF(c->A,0x7F);c->A++;_NZ(c->A);')
-
-#-------------------------------------------------------------------------------
-def i_incb(o):
-    cmt(o, 'INCB')
-    o.t('_VF(c->A,0x7F);c->B++;_NZ(c->B);')
+def i_incx(o,x):
+    cmt(o, 'INC'+x)
+    o.t(f'_VF(c->{x},0x7F);c->{x}++;_NZ(c->{x});')
 
 #-------------------------------------------------------------------------------
 def i_inc(o):
@@ -252,64 +242,34 @@ def i_inc(o):
     o.t('_VF(_GD(),0x7F);c->AD=_GD()+1;_NZ(c->AD);_SD(c->AD);_WR();')
 
 #-------------------------------------------------------------------------------
-def i_suba(o):
-    cmt(o, 'SUBA')
-    o.t('_mc6800_sub(c, _GD(), true, false);');
+def i_subx(o,x):
+    cmt(o, 'SUB'+x)
+    o.t(f'_mc6800_sub(c, _GD(), {"true" if x == "A" else "false"}, false);');
 
 #-------------------------------------------------------------------------------
-def i_subb(o):
-    cmt(o, 'SUBB')
-    o.t('_mc6800_sub(c, _GD(), false, false);');
+def i_sbcx(o,x):
+    cmt(o, 'SBC'+x)
+    o.t(f'_mc6800_sub(c, _GD(), {"true" if x == "A" else "false"}, true);');
 
 #-------------------------------------------------------------------------------
-def i_sbca(o):
-    cmt(o, 'SBCA')
-    o.t('_mc6800_sub(c, _GD(), true, true);');
+def i_ldax(o,x):
+    cmt(o,'LDA'+x)
+    o.t(f'c->{x}=_GD();_NZ(c->{x});')
 
 #-------------------------------------------------------------------------------
-def i_sbcb(o):
-    cmt(o, 'SBCB')
-    o.t('_mc6800_sub(c, _GD(), false, true);');
+def i_stax(o,x):
+    cmt(o,'STA'+x)
+    o.t(f'_SD(c->{x});_WR();')
 
 #-------------------------------------------------------------------------------
-def i_ldaa(o):
-    cmt(o,'LDAA')
-    o.t('c->A=_GD();_NZ(c->A);')
+def i_adcx(o,x):
+    cmt(o, 'ADC'+x)
+    o.t(f'_mc6800_add(c, _GD(), {"true" if x == "A" else "false"}, true);');
 
 #-------------------------------------------------------------------------------
-def i_ldab(o):
-    cmt(o,'LDAB')
-    o.t('c->B=_GD();_NZ(c->B);')
-
-#-------------------------------------------------------------------------------
-def i_staa(o):
-    cmt(o,'STAA')
-    o.t('_SD(c->A);_WR();')
-
-#-------------------------------------------------------------------------------
-def i_stab(o):
-    cmt(o,'STAB')
-    o.t('_SD(c->B);_WR();')
-
-#-------------------------------------------------------------------------------
-def i_adca(o):
-    cmt(o, 'ADCA')
-    o.t('_mc6800_add(c, _GD(), true, true);');
-
-#-------------------------------------------------------------------------------
-def i_adcb(o):
-    cmt(o, 'ADCB')
-    o.t('_mc6800_add(c, _GD(), false, true);');
-
-#-------------------------------------------------------------------------------
-def i_adda(o):
-    cmt(o, 'ADDA')
-    o.t('_mc6800_add(c, _GD(), true, false);');
-
-#-------------------------------------------------------------------------------
-def i_addb(o):
-    cmt(o, 'ADDB')
-    o.t('_mc6800_add(c, _GD(), false, false);');
+def i_addx(o,x):
+    cmt(o, 'ADD'+x)
+    o.t(f'_mc6800_add(c, _GD(), {"true" if x == "A" else "false"}, false);');
 
 #-------------------------------------------------------------------------------
 def enc_op(op):
@@ -331,50 +291,33 @@ def enc_op(op):
         i_nop(o)
     elif aa == 1:
         if cccc == 10:       # DEC
-            if bb == 0:        i_deca(o)
-            elif bb == 1:        i_decb(o)
+            if bb == 0:        i_decx(o, "A")
+            elif bb == 1:        i_decx(o, "B")
             elif bb == 2:        i_dec(o)
             elif bb == 3:        i_dec(o)
         elif cccc == 12:     # INC
-            if bb == 0:        i_inca(o)
-            elif bb == 1:        i_incb(o)
+            if bb == 0:        i_incx(o, "A")
+            elif bb == 1:        i_incx(o, "B")
             elif bb == 2:        i_inc(o)
             elif bb == 3:        i_inc(o)
         else:                i_nop(o)
-    elif aa == 2:
-        if cccc == 0:        i_suba(o)
+    else:
+        accx = aa == 2
+        acc = "A" if accx else "B"
+        if cccc == 0:        i_subx(o,acc)
         if cccc == 1:        i_nop(o)
-        if cccc == 2:        i_sbca(o)
+        if cccc == 2:        i_sbcx(o,acc)
         if cccc == 3:        i_nop(o)
         if cccc == 4:        i_nop(o)
         if cccc == 5:        i_nop(o)
-        if cccc == 6:        i_ldaa(o)
+        if cccc == 6:        i_ldax(o,acc)
         if cccc == 7:
             if bb == 0:        i_nop(o)
-            else:              i_staa(o)
+            else:              i_stax(o,acc)
         if cccc == 8:        i_nop(o)
-        if cccc == 9:        i_adca(o)
+        if cccc == 9:        i_adcx(o,acc)
         if cccc == 10:       i_nop(o)
-        if cccc == 11:       i_adda(o)
-        if cccc == 12:       i_nop(o)
-        if cccc == 13:       i_nop(o)
-        if cccc == 14:       i_nop(o)
-        if cccc == 15:       i_nop(o)
-    elif aa == 3:
-        if cccc == 0:        i_subb(o)
-        if cccc == 1:        i_nop(o)
-        if cccc == 2:        i_sbcb(o)
-        if cccc == 3:        i_nop(o)
-        if cccc == 4:        i_nop(o)
-        if cccc == 5:        i_nop(o)
-        if cccc == 6:        i_ldab(o)
-        if cccc == 7:
-            if bb == 0:        i_nop(o)
-            else:              i_stab(o)
-        if cccc == 8:        i_nop(o)
-        if cccc == 9:        i_adcb(o)
-        if cccc == 10:       i_nop(o)
-        if cccc == 11:       i_addb(o)
+        if cccc == 11:       i_addx(o,acc)
         if cccc == 12:       i_nop(o)
         if cccc == 13:       i_nop(o)
         if cccc == 14:       i_nop(o)
