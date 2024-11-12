@@ -224,42 +224,52 @@ def i_swi(o):
 #-------------------------------------------------------------------------------
 def i_deca(o):
     cmt(o, 'DECA')
-    o.t('c->A--;_NZ(c->A);')
+    o.t('_VF(c->A,0x80);c->A--;_NZ(c->A);')
 
 #-------------------------------------------------------------------------------
 def i_decb(o):
     cmt(o, 'DECB')
-    o.t('c->B--;_NZ(c->B);')
+    o.t('_VF(c->B,0x80);c->B--;_NZ(c->B);')
 
 #-------------------------------------------------------------------------------
 def i_dec(o):
     cmt(o, 'DEC')
-    o.t('c->AD=_GD()-1;_NZ(c->AD);_SD(c->AD);_WR();')
+    o.t('_VF(_GD(),0x80);c->AD=_GD()-1;_NZ(c->AD);_SD(c->AD);_WR();')
 
 #-------------------------------------------------------------------------------
 def i_inca(o):
     cmt(o, 'INCA')
-    o.t('c->A++;_NZ(c->A);')
+    o.t('_VF(c->A,0x7F);c->A++;_NZ(c->A);')
 
 #-------------------------------------------------------------------------------
 def i_incb(o):
     cmt(o, 'INCB')
-    o.t('c->B++;_NZ(c->B);')
+    o.t('_VF(c->A,0x7F);c->B++;_NZ(c->B);')
 
 #-------------------------------------------------------------------------------
 def i_inc(o):
     cmt(o, 'INC')
-    o.t('c->AD=_GD()+1;_NZ(c->AD);_SD(c->AD);_WR();')
+    o.t('_VF(_GD(),0x7F);c->AD=_GD()+1;_NZ(c->AD);_SD(c->AD);_WR();')
 
 #-------------------------------------------------------------------------------
 def i_suba(o):
     cmt(o, 'SUBA')
-    o.t('c->A-=_GD();_NZ(c->A);')
+    o.t('_mc6800_sub(c, _GD(), true, false);');
 
 #-------------------------------------------------------------------------------
 def i_subb(o):
     cmt(o, 'SUBB')
-    o.t('c->B-=_GD();_NZ(c->B);')
+    o.t('_mc6800_sub(c, _GD(), false, false);');
+
+#-------------------------------------------------------------------------------
+def i_sbca(o):
+    cmt(o, 'SBCA')
+    o.t('_mc6800_sub(c, _GD(), true, true);');
+
+#-------------------------------------------------------------------------------
+def i_sbcb(o):
+    cmt(o, 'SBCB')
+    o.t('_mc6800_sub(c, _GD(), false, true);');
 
 #-------------------------------------------------------------------------------
 def i_ldaa(o):
@@ -282,14 +292,24 @@ def i_stab(o):
     o.t('_SD(c->B);_WR();')
 
 #-------------------------------------------------------------------------------
+def i_adca(o):
+    cmt(o, 'ADCA')
+    o.t('_mc6800_add(c, _GD(), true, true);');
+
+#-------------------------------------------------------------------------------
+def i_adcb(o):
+    cmt(o, 'ADCB')
+    o.t('_mc6800_add(c, _GD(), false, true);');
+
+#-------------------------------------------------------------------------------
 def i_adda(o):
     cmt(o, 'ADDA')
-    o.t('c->A+=_GD();_NZ(c->A);')
+    o.t('_mc6800_add(c, _GD(), true, false);');
 
 #-------------------------------------------------------------------------------
 def i_addb(o):
     cmt(o, 'ADDB')
-    o.t('c->B+=_GD();_NZ(c->B);')
+    o.t('_mc6800_add(c, _GD(), false, false);');
 
 #-------------------------------------------------------------------------------
 def enc_op(op):
@@ -324,7 +344,7 @@ def enc_op(op):
     elif aa == 2:
         if cccc == 0:        i_suba(o)
         if cccc == 1:        i_nop(o)
-        if cccc == 2:        i_nop(o)
+        if cccc == 2:        i_sbca(o)
         if cccc == 3:        i_nop(o)
         if cccc == 4:        i_nop(o)
         if cccc == 5:        i_nop(o)
@@ -333,7 +353,7 @@ def enc_op(op):
             if bb == 0:        i_nop(o)
             else:              i_staa(o)
         if cccc == 8:        i_nop(o)
-        if cccc == 9:        i_nop(o)
+        if cccc == 9:        i_adca(o)
         if cccc == 10:       i_nop(o)
         if cccc == 11:       i_adda(o)
         if cccc == 12:       i_nop(o)
@@ -343,7 +363,7 @@ def enc_op(op):
     elif aa == 3:
         if cccc == 0:        i_subb(o)
         if cccc == 1:        i_nop(o)
-        if cccc == 2:        i_nop(o)
+        if cccc == 2:        i_sbcb(o)
         if cccc == 3:        i_nop(o)
         if cccc == 4:        i_nop(o)
         if cccc == 5:        i_nop(o)
@@ -352,7 +372,7 @@ def enc_op(op):
             if bb == 0:        i_nop(o)
             else:              i_stab(o)
         if cccc == 8:        i_nop(o)
-        if cccc == 9:        i_nop(o)
+        if cccc == 9:        i_adcb(o)
         if cccc == 10:       i_nop(o)
         if cccc == 11:       i_addb(o)
         if cccc == 12:       i_nop(o)
@@ -383,4 +403,3 @@ with open(InpPath, 'r') as inf:
     c_src = templ.safe_substitute(decode_block=out_lines)
     with open(OutPath, 'w') as outf:
         outf.write(c_src)
-

@@ -236,6 +236,53 @@ uint64_t mc6800_tick(mc6800_t* cpu, uint64_t pins);
     #define CHIPS_ASSERT(c) assert(c)
 #endif
 
+/* helper macros and functions for code-generated instruction decoder */
+#define _MC6800_NZ(p,v) ((p&~(MC6800_NF|MC6800_ZF))|((v&0xFF)?(v&MC6800_NF):MC6800_ZF))
+
+static inline void _mc6800_add(mc6800_t* cpu, uint8_t val, bool a, bool carry_mode) {
+    uint16_t sum = (a?cpu->A:cpu->B) + val;
+    if (carry_mode) {
+        sum += cpu->P & MC6800_CF ? 1 : 0;
+    }
+    cpu->P &= ~(MC6800_VF|MC6800_CF);
+    cpu->P = _MC6800_NZ(cpu->P, sum);
+    if (~((a?cpu->A:cpu->B)^val) & ((a?cpu->A:cpu->B)^sum) & 0x80) {
+        cpu->P |= MC6800_VF;
+    }
+    if (sum & 0xFF00) {
+        cpu->P |= MC6800_CF;
+    }
+    if (a) {
+        cpu->A = sum & 0xFF;
+    }
+    else {
+        cpu->B = sum & 0xFF;
+    }
+}
+
+static inline void _mc6800_sub(mc6800_t* cpu, uint8_t val, bool a, bool carry_mode) {
+    uint16_t diff = (a?cpu->A:cpu->B) - val;
+    if (carry_mode) {
+        diff -= cpu->P & MC6800_CF ? 0 : 1;
+    }
+    cpu->P &= ~(MC6800_VF|MC6800_CF);
+    cpu->P = _MC6800_NZ(cpu->P, (uint8_t)diff);
+    if (((a?cpu->A:cpu->B)^val) & ((a?cpu->A:cpu->B)^diff) & 0x80) {
+        cpu->P |= MC6800_VF;
+    }
+    if (!(diff & 0xFF00)) {
+        cpu->P |= MC6800_CF;
+    }
+    if (a) {
+        cpu->A = diff & 0xFF;
+    }
+    else {
+        cpu->B = diff & 0xFF;
+    }
+}
+
+#undef _MC6800_NZ
+
 uint64_t mc6800_init(mc6800_t* c) {
     CHIPS_ASSERT(c);
     memset(c, 0, sizeof(*c));
@@ -267,9 +314,16 @@ uint64_t mc6800_init(mc6800_t* c) {
 #define _WR() _OFF(MC6800_RW);
 /* set N and Z flags depending on value */
 #define _NZ(v) c->P=((c->P&~(MC6800_NF|MC6800_ZF))|((v&0xFF)?(v&MC6800_NF):MC6800_ZF))
+/* set V flag if parameters are equal */
+#define _VF(r,v) c->P=((c->P&~MC6800_VF)|(r==v?MC6800_VF:0));
+/* set V flag if addition results in two's complement overflow */
+#define _VFA(r,v) c->P=((c->P&~MC6800_VF)|(((r>127&&v>127&&r+v<=127)||(r<=127&&v<=127&&r+v>127))?MC6800_VF:0)));
+/* set V flag if subtraction results in two's complement overflow */
+#define _VFS(r,v) assert(false);
+/* set H and C flags in case of carry on addition */
+#define _CF(r,v) c->P=(c->P&~(MC6800_CF|MC6800_HF))|(r+v<r?MC6800_CF)
 /* set VMA (address bus unstable) */
 #define _VMA() _OFF(MC6800_VMA);
-
 #if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable:4244)   /* conversion from 'uint16_t' to 'uint8_t', possible loss of data */
@@ -1608,7 +1662,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x49<<4)|14: assert(false);break;
         case (0x49<<4)|15: assert(false);break;
     /* DECA  */
-        case (0x4A<<4)|0: c->A--;_NZ(c->A);_VMA();break;
+        case (0x4A<<4)|0: _VF(c->A,0x80);c->A--;_NZ(c->A);_VMA();break;
         case (0x4A<<4)|1: _FETCH();break;
         case (0x4A<<4)|2: assert(false);break;
         case (0x4A<<4)|3: assert(false);break;
@@ -1642,7 +1696,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x4B<<4)|14: assert(false);break;
         case (0x4B<<4)|15: assert(false);break;
     /* INCA  */
-        case (0x4C<<4)|0: c->A++;_NZ(c->A);_VMA();break;
+        case (0x4C<<4)|0: _VF(c->A,0x7F);c->A++;_NZ(c->A);_VMA();break;
         case (0x4C<<4)|1: _FETCH();break;
         case (0x4C<<4)|2: assert(false);break;
         case (0x4C<<4)|3: assert(false);break;
@@ -1880,7 +1934,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x59<<4)|14: assert(false);break;
         case (0x59<<4)|15: assert(false);break;
     /* DECB  */
-        case (0x5A<<4)|0: c->B--;_NZ(c->B);_VMA();break;
+        case (0x5A<<4)|0: _VF(c->B,0x80);c->B--;_NZ(c->B);_VMA();break;
         case (0x5A<<4)|1: _FETCH();break;
         case (0x5A<<4)|2: assert(false);break;
         case (0x5A<<4)|3: assert(false);break;
@@ -1914,7 +1968,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x5B<<4)|14: assert(false);break;
         case (0x5B<<4)|15: assert(false);break;
     /* INCB  */
-        case (0x5C<<4)|0: c->B++;_NZ(c->B);_VMA();break;
+        case (0x5C<<4)|0: _VF(c->A,0x7F);c->B++;_NZ(c->B);_VMA();break;
         case (0x5C<<4)|1: _FETCH();break;
         case (0x5C<<4)|2: assert(false);break;
         case (0x5C<<4)|3: assert(false);break;
@@ -2157,7 +2211,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x6A<<4)|2: c->AD=(c->AD+c->IX)&0xFF;_SA(c->AD);break;
         case (0x6A<<4)|3: _SA((c->AD+1)&0xFF);c->AD=_GD();break;
         case (0x6A<<4)|4: _SA((_GD()<<8)|c->AD);break;
-        case (0x6A<<4)|5: c->AD=_GD()-1;_NZ(c->AD);_SD(c->AD);_WR();break;
+        case (0x6A<<4)|5: _VF(_GD(),0x80);c->AD=_GD()-1;_NZ(c->AD);_SD(c->AD);_WR();break;
         case (0x6A<<4)|6: _FETCH();break;
         case (0x6A<<4)|7: assert(false);break;
         case (0x6A<<4)|8: assert(false);break;
@@ -2191,7 +2245,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x6C<<4)|2: c->AD=(c->AD+c->IX)&0xFF;_SA(c->AD);break;
         case (0x6C<<4)|3: _SA((c->AD+1)&0xFF);c->AD=_GD();break;
         case (0x6C<<4)|4: _SA((_GD()<<8)|c->AD);break;
-        case (0x6C<<4)|5: c->AD=_GD()+1;_NZ(c->AD);_SD(c->AD);_WR();break;
+        case (0x6C<<4)|5: _VF(_GD(),0x7F);c->AD=_GD()+1;_NZ(c->AD);_SD(c->AD);_WR();break;
         case (0x6C<<4)|6: _FETCH();break;
         case (0x6C<<4)|7: assert(false);break;
         case (0x6C<<4)|8: assert(false);break;
@@ -2428,7 +2482,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x7A<<4)|1: _SA(c->PC++);c->AD=_GD();break;
         case (0x7A<<4)|2: _SA(_GD()|(c->AD<<8));_VMA();break;
         case (0x7A<<4)|3: break;
-        case (0x7A<<4)|4: c->AD=_GD()-1;_NZ(c->AD);_SD(c->AD);_WR();break;
+        case (0x7A<<4)|4: _VF(_GD(),0x80);c->AD=_GD()-1;_NZ(c->AD);_SD(c->AD);_WR();break;
         case (0x7A<<4)|5: _FETCH();break;
         case (0x7A<<4)|6: assert(false);break;
         case (0x7A<<4)|7: assert(false);break;
@@ -2462,7 +2516,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x7C<<4)|1: _SA(c->PC++);c->AD=_GD();break;
         case (0x7C<<4)|2: _SA(_GD()|(c->AD<<8));_VMA();break;
         case (0x7C<<4)|3: break;
-        case (0x7C<<4)|4: c->AD=_GD()+1;_NZ(c->AD);_SD(c->AD);_WR();break;
+        case (0x7C<<4)|4: _VF(_GD(),0x7F);c->AD=_GD()+1;_NZ(c->AD);_SD(c->AD);_WR();break;
         case (0x7C<<4)|5: _FETCH();break;
         case (0x7C<<4)|6: assert(false);break;
         case (0x7C<<4)|7: assert(false);break;
@@ -2527,7 +2581,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x7F<<4)|15: assert(false);break;
     /* SUBA # */
         case (0x80<<4)|0: _SA(c->PC++);break;
-        case (0x80<<4)|1: c->A-=_GD();_NZ(c->A);_FETCH();break;
+        case (0x80<<4)|1: _mc6800_sub(c, _GD(), true, false);_FETCH();break;
         case (0x80<<4)|2: assert(false);break;
         case (0x80<<4)|3: assert(false);break;
         case (0x80<<4)|4: assert(false);break;
@@ -2559,9 +2613,9 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x81<<4)|13: assert(false);break;
         case (0x81<<4)|14: assert(false);break;
         case (0x81<<4)|15: assert(false);break;
-    /* NOP # */
+    /* SBCA # */
         case (0x82<<4)|0: _SA(c->PC++);break;
-        case (0x82<<4)|1: _FETCH();break;
+        case (0x82<<4)|1: _mc6800_sub(c, _GD(), true, true);_FETCH();break;
         case (0x82<<4)|2: assert(false);break;
         case (0x82<<4)|3: assert(false);break;
         case (0x82<<4)|4: assert(false);break;
@@ -2678,9 +2732,9 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x88<<4)|13: assert(false);break;
         case (0x88<<4)|14: assert(false);break;
         case (0x88<<4)|15: assert(false);break;
-    /* NOP # */
+    /* ADCA # */
         case (0x89<<4)|0: _SA(c->PC++);break;
-        case (0x89<<4)|1: _FETCH();break;
+        case (0x89<<4)|1: _mc6800_add(c, _GD(), true, true);_FETCH();break;
         case (0x89<<4)|2: assert(false);break;
         case (0x89<<4)|3: assert(false);break;
         case (0x89<<4)|4: assert(false);break;
@@ -2714,7 +2768,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x8A<<4)|15: assert(false);break;
     /* ADDA # */
         case (0x8B<<4)|0: _SA(c->PC++);break;
-        case (0x8B<<4)|1: c->A+=_GD();_NZ(c->A);_FETCH();break;
+        case (0x8B<<4)|1: _mc6800_add(c, _GD(), true, false);_FETCH();break;
         case (0x8B<<4)|2: assert(false);break;
         case (0x8B<<4)|3: assert(false);break;
         case (0x8B<<4)|4: assert(false);break;
@@ -2800,7 +2854,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
     /* SUBA zp */
         case (0x90<<4)|0: _SA(c->PC++);break;
         case (0x90<<4)|1: _SA(_GD());break;
-        case (0x90<<4)|2: c->A-=_GD();_NZ(c->A);_FETCH();break;
+        case (0x90<<4)|2: _mc6800_sub(c, _GD(), true, false);_FETCH();break;
         case (0x90<<4)|3: assert(false);break;
         case (0x90<<4)|4: assert(false);break;
         case (0x90<<4)|5: assert(false);break;
@@ -2831,10 +2885,10 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x91<<4)|13: assert(false);break;
         case (0x91<<4)|14: assert(false);break;
         case (0x91<<4)|15: assert(false);break;
-    /* NOP zp */
+    /* SBCA zp */
         case (0x92<<4)|0: _SA(c->PC++);break;
         case (0x92<<4)|1: _SA(_GD());break;
-        case (0x92<<4)|2: _FETCH();break;
+        case (0x92<<4)|2: _mc6800_sub(c, _GD(), true, true);_FETCH();break;
         case (0x92<<4)|3: assert(false);break;
         case (0x92<<4)|4: assert(false);break;
         case (0x92<<4)|5: assert(false);break;
@@ -2950,10 +3004,10 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x98<<4)|13: assert(false);break;
         case (0x98<<4)|14: assert(false);break;
         case (0x98<<4)|15: assert(false);break;
-    /* NOP zp */
+    /* ADCA zp */
         case (0x99<<4)|0: _SA(c->PC++);break;
         case (0x99<<4)|1: _SA(_GD());break;
-        case (0x99<<4)|2: _FETCH();break;
+        case (0x99<<4)|2: _mc6800_add(c, _GD(), true, true);_FETCH();break;
         case (0x99<<4)|3: assert(false);break;
         case (0x99<<4)|4: assert(false);break;
         case (0x99<<4)|5: assert(false);break;
@@ -2987,7 +3041,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
     /* ADDA zp */
         case (0x9B<<4)|0: _SA(c->PC++);break;
         case (0x9B<<4)|1: _SA(_GD());break;
-        case (0x9B<<4)|2: c->A+=_GD();_NZ(c->A);_FETCH();break;
+        case (0x9B<<4)|2: _mc6800_add(c, _GD(), true, false);_FETCH();break;
         case (0x9B<<4)|3: assert(false);break;
         case (0x9B<<4)|4: assert(false);break;
         case (0x9B<<4)|5: assert(false);break;
@@ -3075,7 +3129,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xA0<<4)|2: c->AD=(c->AD+c->IX)&0xFF;_SA(c->AD);break;
         case (0xA0<<4)|3: _SA((c->AD+1)&0xFF);c->AD=_GD();break;
         case (0xA0<<4)|4: _SA((_GD()<<8)|c->AD);break;
-        case (0xA0<<4)|5: c->A-=_GD();_NZ(c->A);_FETCH();break;
+        case (0xA0<<4)|5: _mc6800_sub(c, _GD(), true, false);_FETCH();break;
         case (0xA0<<4)|6: assert(false);break;
         case (0xA0<<4)|7: assert(false);break;
         case (0xA0<<4)|8: assert(false);break;
@@ -3103,13 +3157,13 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xA1<<4)|13: assert(false);break;
         case (0xA1<<4)|14: assert(false);break;
         case (0xA1<<4)|15: assert(false);break;
-    /* NOP (zp,X) */
+    /* SBCA (zp,X) */
         case (0xA2<<4)|0: _SA(c->PC++);break;
         case (0xA2<<4)|1: c->AD=_GD();_SA(c->AD);break;
         case (0xA2<<4)|2: c->AD=(c->AD+c->IX)&0xFF;_SA(c->AD);break;
         case (0xA2<<4)|3: _SA((c->AD+1)&0xFF);c->AD=_GD();break;
         case (0xA2<<4)|4: _SA((_GD()<<8)|c->AD);break;
-        case (0xA2<<4)|5: _FETCH();break;
+        case (0xA2<<4)|5: _mc6800_sub(c, _GD(), true, true);_FETCH();break;
         case (0xA2<<4)|6: assert(false);break;
         case (0xA2<<4)|7: assert(false);break;
         case (0xA2<<4)|8: assert(false);break;
@@ -3222,13 +3276,13 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xA8<<4)|13: assert(false);break;
         case (0xA8<<4)|14: assert(false);break;
         case (0xA8<<4)|15: assert(false);break;
-    /* NOP (zp,X) */
+    /* ADCA (zp,X) */
         case (0xA9<<4)|0: _SA(c->PC++);break;
         case (0xA9<<4)|1: c->AD=_GD();_SA(c->AD);break;
         case (0xA9<<4)|2: c->AD=(c->AD+c->IX)&0xFF;_SA(c->AD);break;
         case (0xA9<<4)|3: _SA((c->AD+1)&0xFF);c->AD=_GD();break;
         case (0xA9<<4)|4: _SA((_GD()<<8)|c->AD);break;
-        case (0xA9<<4)|5: _FETCH();break;
+        case (0xA9<<4)|5: _mc6800_add(c, _GD(), true, true);_FETCH();break;
         case (0xA9<<4)|6: assert(false);break;
         case (0xA9<<4)|7: assert(false);break;
         case (0xA9<<4)|8: assert(false);break;
@@ -3262,7 +3316,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xAB<<4)|2: c->AD=(c->AD+c->IX)&0xFF;_SA(c->AD);break;
         case (0xAB<<4)|3: _SA((c->AD+1)&0xFF);c->AD=_GD();break;
         case (0xAB<<4)|4: _SA((_GD()<<8)|c->AD);break;
-        case (0xAB<<4)|5: c->A+=_GD();_NZ(c->A);_FETCH();break;
+        case (0xAB<<4)|5: _mc6800_add(c, _GD(), true, false);_FETCH();break;
         case (0xAB<<4)|6: assert(false);break;
         case (0xAB<<4)|7: assert(false);break;
         case (0xAB<<4)|8: assert(false);break;
@@ -3345,7 +3399,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xB0<<4)|0: _SA(c->PC++);break;
         case (0xB0<<4)|1: _SA(c->PC++);c->AD=_GD();break;
         case (0xB0<<4)|2: _SA(_GD()|(c->AD<<8));break;
-        case (0xB0<<4)|3: c->A-=_GD();_NZ(c->A);_FETCH();break;
+        case (0xB0<<4)|3: _mc6800_sub(c, _GD(), true, false);_FETCH();break;
         case (0xB0<<4)|4: assert(false);break;
         case (0xB0<<4)|5: assert(false);break;
         case (0xB0<<4)|6: assert(false);break;
@@ -3375,11 +3429,11 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xB1<<4)|13: assert(false);break;
         case (0xB1<<4)|14: assert(false);break;
         case (0xB1<<4)|15: assert(false);break;
-    /* NOP abs */
+    /* SBCA abs */
         case (0xB2<<4)|0: _SA(c->PC++);break;
         case (0xB2<<4)|1: _SA(c->PC++);c->AD=_GD();break;
         case (0xB2<<4)|2: _SA(_GD()|(c->AD<<8));break;
-        case (0xB2<<4)|3: _FETCH();break;
+        case (0xB2<<4)|3: _mc6800_sub(c, _GD(), true, true);_FETCH();break;
         case (0xB2<<4)|4: assert(false);break;
         case (0xB2<<4)|5: assert(false);break;
         case (0xB2<<4)|6: assert(false);break;
@@ -3494,11 +3548,11 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xB8<<4)|13: assert(false);break;
         case (0xB8<<4)|14: assert(false);break;
         case (0xB8<<4)|15: assert(false);break;
-    /* NOP abs */
+    /* ADCA abs */
         case (0xB9<<4)|0: _SA(c->PC++);break;
         case (0xB9<<4)|1: _SA(c->PC++);c->AD=_GD();break;
         case (0xB9<<4)|2: _SA(_GD()|(c->AD<<8));break;
-        case (0xB9<<4)|3: _FETCH();break;
+        case (0xB9<<4)|3: _mc6800_add(c, _GD(), true, true);_FETCH();break;
         case (0xB9<<4)|4: assert(false);break;
         case (0xB9<<4)|5: assert(false);break;
         case (0xB9<<4)|6: assert(false);break;
@@ -3532,7 +3586,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xBB<<4)|0: _SA(c->PC++);break;
         case (0xBB<<4)|1: _SA(c->PC++);c->AD=_GD();break;
         case (0xBB<<4)|2: _SA(_GD()|(c->AD<<8));break;
-        case (0xBB<<4)|3: c->A+=_GD();_NZ(c->A);_FETCH();break;
+        case (0xBB<<4)|3: _mc6800_add(c, _GD(), true, false);_FETCH();break;
         case (0xBB<<4)|4: assert(false);break;
         case (0xBB<<4)|5: assert(false);break;
         case (0xBB<<4)|6: assert(false);break;
@@ -3615,7 +3669,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xBF<<4)|15: assert(false);break;
     /* SUBB # */
         case (0xC0<<4)|0: _SA(c->PC++);break;
-        case (0xC0<<4)|1: c->B-=_GD();_NZ(c->B);_FETCH();break;
+        case (0xC0<<4)|1: _mc6800_sub(c, _GD(), false, false);_FETCH();break;
         case (0xC0<<4)|2: assert(false);break;
         case (0xC0<<4)|3: assert(false);break;
         case (0xC0<<4)|4: assert(false);break;
@@ -3647,9 +3701,9 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xC1<<4)|13: assert(false);break;
         case (0xC1<<4)|14: assert(false);break;
         case (0xC1<<4)|15: assert(false);break;
-    /* NOP # */
+    /* SBCB # */
         case (0xC2<<4)|0: _SA(c->PC++);break;
-        case (0xC2<<4)|1: _FETCH();break;
+        case (0xC2<<4)|1: _mc6800_sub(c, _GD(), false, true);_FETCH();break;
         case (0xC2<<4)|2: assert(false);break;
         case (0xC2<<4)|3: assert(false);break;
         case (0xC2<<4)|4: assert(false);break;
@@ -3766,9 +3820,9 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xC8<<4)|13: assert(false);break;
         case (0xC8<<4)|14: assert(false);break;
         case (0xC8<<4)|15: assert(false);break;
-    /* NOP # */
+    /* ADCB # */
         case (0xC9<<4)|0: _SA(c->PC++);break;
-        case (0xC9<<4)|1: _FETCH();break;
+        case (0xC9<<4)|1: _mc6800_add(c, _GD(), false, true);_FETCH();break;
         case (0xC9<<4)|2: assert(false);break;
         case (0xC9<<4)|3: assert(false);break;
         case (0xC9<<4)|4: assert(false);break;
@@ -3802,7 +3856,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xCA<<4)|15: assert(false);break;
     /* ADDB # */
         case (0xCB<<4)|0: _SA(c->PC++);break;
-        case (0xCB<<4)|1: c->B+=_GD();_NZ(c->B);_FETCH();break;
+        case (0xCB<<4)|1: _mc6800_add(c, _GD(), false, false);_FETCH();break;
         case (0xCB<<4)|2: assert(false);break;
         case (0xCB<<4)|3: assert(false);break;
         case (0xCB<<4)|4: assert(false);break;
@@ -3888,7 +3942,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
     /* SUBB zp */
         case (0xD0<<4)|0: _SA(c->PC++);break;
         case (0xD0<<4)|1: _SA(_GD());break;
-        case (0xD0<<4)|2: c->B-=_GD();_NZ(c->B);_FETCH();break;
+        case (0xD0<<4)|2: _mc6800_sub(c, _GD(), false, false);_FETCH();break;
         case (0xD0<<4)|3: assert(false);break;
         case (0xD0<<4)|4: assert(false);break;
         case (0xD0<<4)|5: assert(false);break;
@@ -3919,10 +3973,10 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xD1<<4)|13: assert(false);break;
         case (0xD1<<4)|14: assert(false);break;
         case (0xD1<<4)|15: assert(false);break;
-    /* NOP zp */
+    /* SBCB zp */
         case (0xD2<<4)|0: _SA(c->PC++);break;
         case (0xD2<<4)|1: _SA(_GD());break;
-        case (0xD2<<4)|2: _FETCH();break;
+        case (0xD2<<4)|2: _mc6800_sub(c, _GD(), false, true);_FETCH();break;
         case (0xD2<<4)|3: assert(false);break;
         case (0xD2<<4)|4: assert(false);break;
         case (0xD2<<4)|5: assert(false);break;
@@ -4038,10 +4092,10 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xD8<<4)|13: assert(false);break;
         case (0xD8<<4)|14: assert(false);break;
         case (0xD8<<4)|15: assert(false);break;
-    /* NOP zp */
+    /* ADCB zp */
         case (0xD9<<4)|0: _SA(c->PC++);break;
         case (0xD9<<4)|1: _SA(_GD());break;
-        case (0xD9<<4)|2: _FETCH();break;
+        case (0xD9<<4)|2: _mc6800_add(c, _GD(), false, true);_FETCH();break;
         case (0xD9<<4)|3: assert(false);break;
         case (0xD9<<4)|4: assert(false);break;
         case (0xD9<<4)|5: assert(false);break;
@@ -4075,7 +4129,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
     /* ADDB zp */
         case (0xDB<<4)|0: _SA(c->PC++);break;
         case (0xDB<<4)|1: _SA(_GD());break;
-        case (0xDB<<4)|2: c->B+=_GD();_NZ(c->B);_FETCH();break;
+        case (0xDB<<4)|2: _mc6800_add(c, _GD(), false, false);_FETCH();break;
         case (0xDB<<4)|3: assert(false);break;
         case (0xDB<<4)|4: assert(false);break;
         case (0xDB<<4)|5: assert(false);break;
@@ -4163,7 +4217,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xE0<<4)|2: c->AD=(c->AD+c->IX)&0xFF;_SA(c->AD);break;
         case (0xE0<<4)|3: _SA((c->AD+1)&0xFF);c->AD=_GD();break;
         case (0xE0<<4)|4: _SA((_GD()<<8)|c->AD);break;
-        case (0xE0<<4)|5: c->B-=_GD();_NZ(c->B);_FETCH();break;
+        case (0xE0<<4)|5: _mc6800_sub(c, _GD(), false, false);_FETCH();break;
         case (0xE0<<4)|6: assert(false);break;
         case (0xE0<<4)|7: assert(false);break;
         case (0xE0<<4)|8: assert(false);break;
@@ -4191,13 +4245,13 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xE1<<4)|13: assert(false);break;
         case (0xE1<<4)|14: assert(false);break;
         case (0xE1<<4)|15: assert(false);break;
-    /* NOP (zp,X) */
+    /* SBCB (zp,X) */
         case (0xE2<<4)|0: _SA(c->PC++);break;
         case (0xE2<<4)|1: c->AD=_GD();_SA(c->AD);break;
         case (0xE2<<4)|2: c->AD=(c->AD+c->IX)&0xFF;_SA(c->AD);break;
         case (0xE2<<4)|3: _SA((c->AD+1)&0xFF);c->AD=_GD();break;
         case (0xE2<<4)|4: _SA((_GD()<<8)|c->AD);break;
-        case (0xE2<<4)|5: _FETCH();break;
+        case (0xE2<<4)|5: _mc6800_sub(c, _GD(), false, true);_FETCH();break;
         case (0xE2<<4)|6: assert(false);break;
         case (0xE2<<4)|7: assert(false);break;
         case (0xE2<<4)|8: assert(false);break;
@@ -4310,13 +4364,13 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xE8<<4)|13: assert(false);break;
         case (0xE8<<4)|14: assert(false);break;
         case (0xE8<<4)|15: assert(false);break;
-    /* NOP (zp,X) */
+    /* ADCB (zp,X) */
         case (0xE9<<4)|0: _SA(c->PC++);break;
         case (0xE9<<4)|1: c->AD=_GD();_SA(c->AD);break;
         case (0xE9<<4)|2: c->AD=(c->AD+c->IX)&0xFF;_SA(c->AD);break;
         case (0xE9<<4)|3: _SA((c->AD+1)&0xFF);c->AD=_GD();break;
         case (0xE9<<4)|4: _SA((_GD()<<8)|c->AD);break;
-        case (0xE9<<4)|5: _FETCH();break;
+        case (0xE9<<4)|5: _mc6800_add(c, _GD(), false, true);_FETCH();break;
         case (0xE9<<4)|6: assert(false);break;
         case (0xE9<<4)|7: assert(false);break;
         case (0xE9<<4)|8: assert(false);break;
@@ -4350,7 +4404,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xEB<<4)|2: c->AD=(c->AD+c->IX)&0xFF;_SA(c->AD);break;
         case (0xEB<<4)|3: _SA((c->AD+1)&0xFF);c->AD=_GD();break;
         case (0xEB<<4)|4: _SA((_GD()<<8)|c->AD);break;
-        case (0xEB<<4)|5: c->B+=_GD();_NZ(c->B);_FETCH();break;
+        case (0xEB<<4)|5: _mc6800_add(c, _GD(), false, false);_FETCH();break;
         case (0xEB<<4)|6: assert(false);break;
         case (0xEB<<4)|7: assert(false);break;
         case (0xEB<<4)|8: assert(false);break;
@@ -4433,7 +4487,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xF0<<4)|0: _SA(c->PC++);break;
         case (0xF0<<4)|1: _SA(c->PC++);c->AD=_GD();break;
         case (0xF0<<4)|2: _SA(_GD()|(c->AD<<8));break;
-        case (0xF0<<4)|3: c->B-=_GD();_NZ(c->B);_FETCH();break;
+        case (0xF0<<4)|3: _mc6800_sub(c, _GD(), false, false);_FETCH();break;
         case (0xF0<<4)|4: assert(false);break;
         case (0xF0<<4)|5: assert(false);break;
         case (0xF0<<4)|6: assert(false);break;
@@ -4463,11 +4517,11 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xF1<<4)|13: assert(false);break;
         case (0xF1<<4)|14: assert(false);break;
         case (0xF1<<4)|15: assert(false);break;
-    /* NOP abs */
+    /* SBCB abs */
         case (0xF2<<4)|0: _SA(c->PC++);break;
         case (0xF2<<4)|1: _SA(c->PC++);c->AD=_GD();break;
         case (0xF2<<4)|2: _SA(_GD()|(c->AD<<8));break;
-        case (0xF2<<4)|3: _FETCH();break;
+        case (0xF2<<4)|3: _mc6800_sub(c, _GD(), false, true);_FETCH();break;
         case (0xF2<<4)|4: assert(false);break;
         case (0xF2<<4)|5: assert(false);break;
         case (0xF2<<4)|6: assert(false);break;
@@ -4582,11 +4636,11 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xF8<<4)|13: assert(false);break;
         case (0xF8<<4)|14: assert(false);break;
         case (0xF8<<4)|15: assert(false);break;
-    /* NOP abs */
+    /* ADCB abs */
         case (0xF9<<4)|0: _SA(c->PC++);break;
         case (0xF9<<4)|1: _SA(c->PC++);c->AD=_GD();break;
         case (0xF9<<4)|2: _SA(_GD()|(c->AD<<8));break;
-        case (0xF9<<4)|3: _FETCH();break;
+        case (0xF9<<4)|3: _mc6800_add(c, _GD(), false, true);_FETCH();break;
         case (0xF9<<4)|4: assert(false);break;
         case (0xF9<<4)|5: assert(false);break;
         case (0xF9<<4)|6: assert(false);break;
@@ -4620,7 +4674,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xFB<<4)|0: _SA(c->PC++);break;
         case (0xFB<<4)|1: _SA(c->PC++);c->AD=_GD();break;
         case (0xFB<<4)|2: _SA(_GD()|(c->AD<<8));break;
-        case (0xFB<<4)|3: c->B+=_GD();_NZ(c->B);_FETCH();break;
+        case (0xFB<<4)|3: _mc6800_add(c, _GD(), false, false);_FETCH();break;
         case (0xFB<<4)|4: assert(false);break;
         case (0xFB<<4)|5: assert(false);break;
         case (0xFB<<4)|6: assert(false);break;
@@ -4723,5 +4777,6 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
 #undef _RD
 #undef _WR
 #undef _NZ
+#undef _VF
 #undef _VMA
 #endif /* CHIPS_IMPL */

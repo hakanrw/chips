@@ -236,6 +236,53 @@ uint64_t mc6800_tick(mc6800_t* cpu, uint64_t pins);
     #define CHIPS_ASSERT(c) assert(c)
 #endif
 
+/* helper macros and functions for code-generated instruction decoder */
+#define _MC6800_NZ(p,v) ((p&~(MC6800_NF|MC6800_ZF))|((v&0xFF)?(v&MC6800_NF):MC6800_ZF))
+
+static inline void _mc6800_add(mc6800_t* cpu, uint8_t val, bool a, bool carry_mode) {
+    uint16_t sum = (a?cpu->A:cpu->B) + val;
+    if (carry_mode) {
+        sum += cpu->P & MC6800_CF ? 1 : 0;
+    }
+    cpu->P &= ~(MC6800_VF|MC6800_CF);
+    cpu->P = _MC6800_NZ(cpu->P, sum);
+    if (~((a?cpu->A:cpu->B)^val) & ((a?cpu->A:cpu->B)^sum) & 0x80) {
+        cpu->P |= MC6800_VF;
+    }
+    if (sum & 0xFF00) {
+        cpu->P |= MC6800_CF;
+    }
+    if (a) {
+        cpu->A = sum & 0xFF;
+    }
+    else {
+        cpu->B = sum & 0xFF;
+    }
+}
+
+static inline void _mc6800_sub(mc6800_t* cpu, uint8_t val, bool a, bool carry_mode) {
+    uint16_t diff = (a?cpu->A:cpu->B) - val;
+    if (carry_mode) {
+        diff -= cpu->P & MC6800_CF ? 0 : 1;
+    }
+    cpu->P &= ~(MC6800_VF|MC6800_CF);
+    cpu->P = _MC6800_NZ(cpu->P, (uint8_t)diff);
+    if (((a?cpu->A:cpu->B)^val) & ((a?cpu->A:cpu->B)^diff) & 0x80) {
+        cpu->P |= MC6800_VF;
+    }
+    if (!(diff & 0xFF00)) {
+        cpu->P |= MC6800_CF;
+    }
+    if (a) {
+        cpu->A = diff & 0xFF;
+    }
+    else {
+        cpu->B = diff & 0xFF;
+    }
+}
+
+#undef _MC6800_NZ
+
 uint64_t mc6800_init(mc6800_t* c) {
     CHIPS_ASSERT(c);
     memset(c, 0, sizeof(*c));
@@ -267,9 +314,16 @@ uint64_t mc6800_init(mc6800_t* c) {
 #define _WR() _OFF(MC6800_RW);
 /* set N and Z flags depending on value */
 #define _NZ(v) c->P=((c->P&~(MC6800_NF|MC6800_ZF))|((v&0xFF)?(v&MC6800_NF):MC6800_ZF))
+/* set V flag if parameters are equal */
+#define _VF(r,v) c->P=((c->P&~MC6800_VF)|(r==v?MC6800_VF:0));
+/* set V flag if addition results in two's complement overflow */
+#define _VFA(r,v) c->P=((c->P&~MC6800_VF)|(((r>127&&v>127&&r+v<=127)||(r<=127&&v<=127&&r+v>127))?MC6800_VF:0)));
+/* set V flag if subtraction results in two's complement overflow */
+#define _VFS(r,v) assert(false);
+/* set H and C flags in case of carry on addition */
+#define _CF(r,v) c->P=(c->P&~(MC6800_CF|MC6800_HF))|(r+v<r?MC6800_CF)
 /* set VMA (address bus unstable) */
 #define _VMA() _OFF(MC6800_VMA);
-
 #if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable:4244)   /* conversion from 'uint16_t' to 'uint8_t', possible loss of data */
@@ -371,5 +425,6 @@ $decode_block
 #undef _RD
 #undef _WR
 #undef _NZ
+#undef _VF
 #undef _VMA
 #endif /* CHIPS_IMPL */
