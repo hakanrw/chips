@@ -43,19 +43,15 @@ def branch_name(m, v):
 A____ = 0       # no addressing mode
 A_IMM = 1       # immediate
 A_ZER = 2       # zero-page
-#A_ZPX = 3       # zp,X
-#A_ZPY = 4       # zp,Y
 A_ABS = 3       # abs
-#A_ABX = 6       # abs,X
-#A_ABY = 7       # abs,Y
 A_IDX = 4       # (zp, X)
-#A_IDY = 9       # (zp),Y
+A_I16 = 5       # immediate 16 bits
 #A_JMP = 10      # special JMP abs
 #A_JSR = 11      # special JSR abs
-A_INV = 5      # an invalid instruction
+A_INV = 6      # an invalid instruction
 
 # addressing mode strings
-addr_mode_str = ['', '#', 'zp', 'abs', '(zp,X)', 'INVALID']
+addr_mode_str = ['', '#', 'zp', 'abs', '(zp,X)', '#16', 'INVALID']
 
 # memory access modes
 M___ = 0        # no memory access
@@ -94,18 +90,18 @@ ops = [
     # aa = 10
     [
         # SUBA        # CMPA       # SBCA       # --         # ANDA       # BITA       # LDAA       # STAA       # EORA       # ADCA       # ORAA       # ADDA       # CPXA       # BSR/JSR    # LDS        # STS
-        [[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___]],
-        [[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_]],
-        [[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_]],
-        [[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_]],
+        [[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_I16,M_R_],[A____,M___]],
+        [[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W]],
+        [[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W]],
+        [[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W]],
     ],
     # aa = 11
     [
         # SUBB        # CMPB       # SBCB       # --         # ANDB       # BITB       # LDAB       # STAB       # EORB       # ADCB       # ORAB       # ADDB       # --        # --         # LDX        # STX
-        [[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A____,M___],[A_IMM,M_R_],[A____,M___]],
-        [[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A____,M___],[A_ZER,M_R_],[A_ZER,M_R_]],
-        [[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_]],
-        [[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_]],
+        [[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A____,M___],[A_I16,M_R_],[A____,M___]],
+        [[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A____,M___],[A_ZER,M_R_],[A_ZER,M__W]],
+        [[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A____,M___],[A_IDX,M_R_],[A_IDX,M__W]],
+        [[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A____,M___],[A_ABS,M_R_],[A_ABS,M__W]],
     ]
 ]
 
@@ -171,6 +167,9 @@ def enc_addr(op, addr_mode, mem_access):
     elif addr_mode == A_IMM:
         # immediate mode
         op.t('_SA(c->PC++);')
+    elif addr_mode == A_I16:
+        # immediate mode 16 bits
+        op.t('_SA(c->PC++);c->PC++;')
     elif addr_mode == A_ZER:
         # zero page
         op.t('_SA(c->PC++);')
@@ -269,12 +268,12 @@ def i_bitx(o,x):
 #-------------------------------------------------------------------------------
 def i_ldax(o,x):
     cmt(o,'LDA'+x)
-    o.t(f'c->{x}=_GD();_NZ(c->{x});')
+    o.t(f'_VF(false);c->{x}=_GD();_NZ(c->{x});')
 
 #-------------------------------------------------------------------------------
 def i_stax(o,x):
     cmt(o,'STA'+x)
-    o.t(f'_SD(c->{x});_WR();')
+    o.t(f'_VF(false);_SD(c->{x});_NZ(c->{x});_WR();')
 
 #-------------------------------------------------------------------------------
 def i_eorx(o,x):
@@ -307,6 +306,18 @@ def i_ldx(o):
     cmt(o,'LDX')
     o.t(f'c->IX=_GD()<<8;_SA(_GA()+1);');
     o.t(f'_VF(false);c->IX|=_GD();_NZ16(c->IX);');
+
+#-------------------------------------------------------------------------------
+def i_sts(o):
+    cmt(o,'STS')
+    o.t(f'_NZ16(c->SP);_SD(c->SP>>8);_WR();');
+    o.t(f'_VF(false);_SA(_GA()+1);_SD(c->SP&0xFF);_WR();');
+
+#-------------------------------------------------------------------------------
+def i_stx(o):
+    cmt(o,'STX')
+    o.t(f'_NZ16(c->IX);_SD(c->IX>>8);_WR();');
+    o.t(f'_VF(false);_SA(_GA()+1);_SD(c->IX&0xFF);_WR();');
 
 #-------------------------------------------------------------------------------
 def enc_op(op):
@@ -358,9 +369,12 @@ def enc_op(op):
         if cccc == 12:       i_nop(o)
         if cccc == 13:       i_nop(o)
         if cccc == 14:
-            if aa == 0:        i_lds(o)
+            if aa == 2:        i_lds(o)
             else:              i_ldx(o)
-        if cccc == 15:       i_nop(o)
+        if cccc == 15:
+            if bb == 0:        i_nop(o)
+            elif aa == 2:        i_sts(o)
+            else:        	 i_stx(o)
 
     # since read operation is actually done on clock
     # phase 2 but we required another cycle,
