@@ -95,17 +95,17 @@ ops = [
     [
         # SUBA        # CMPA       # SBCA       # --         # ANDA       # BITA       # LDAA       # STAA       # EORA       # ADCA       # ORAA       # ADDA       # CPXA       # BSR/JSR    # LDS        # STS
         [[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___]],
-        [[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_]],
-        [[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_]],
-        [[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_]],
+        [[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_]],
+        [[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_]],
+        [[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_]],
     ],
     # aa = 11
     [
         # SUBB        # CMPB       # SBCB       # --         # ANDB       # BITB       # LDAB       # STAB       # EORB       # ADCB       # ORAB       # ADDB       # --        # --         # LDX        # STX
         [[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A____,M___],[A_IMM,M_R_],[A____,M___]],
-        [[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A____,M___],[A_ZER,M_R_],[A_ZER,M_R_]],
-        [[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_]],
-        [[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_]],
+        [[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A____,M___],[A_ZER,M_R_],[A_ZER,M_R_]],
+        [[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_]],
+        [[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_]],
     ]
 ]
 
@@ -223,33 +223,48 @@ def i_swi(o):
 
 #-------------------------------------------------------------------------------
 def i_decx(o,x):
-    cmt(o, 'DEC'+x)
-    o.t(f'_VF(c->{x},0x80);c->{x}--;_NZ(c->{x});')
+    cmt(o,'DEC'+x)
+    o.t(f'_VF(c->{x}==0x80);c->{x}--;_NZ(c->{x});')
 
 #-------------------------------------------------------------------------------
 def i_dec(o):
-    cmt(o, 'DEC')
-    o.t('_VF(_GD(),0x80);c->AD=_GD()-1;_NZ(c->AD);_SD(c->AD);_WR();')
+    cmt(o,'DEC')
+    o.t('_VF(_GD()==0x80);c->AD=_GD()-1;_NZ(c->AD);_SD(c->AD);_WR();')
 
 #-------------------------------------------------------------------------------
 def i_incx(o,x):
-    cmt(o, 'INC'+x)
-    o.t(f'_VF(c->{x},0x7F);c->{x}++;_NZ(c->{x});')
+    cmt(o,'INC'+x)
+    o.t(f'_VF(c->{x}==0x7F);c->{x}++;_NZ(c->{x});')
 
 #-------------------------------------------------------------------------------
 def i_inc(o):
-    cmt(o, 'INC')
-    o.t('_VF(_GD(),0x7F);c->AD=_GD()+1;_NZ(c->AD);_SD(c->AD);_WR();')
+    cmt(o,'INC')
+    o.t('_VF(_GD()==0x7F);c->AD=_GD()+1;_NZ(c->AD);_SD(c->AD);_WR();')
 
 #-------------------------------------------------------------------------------
 def i_subx(o,x):
-    cmt(o, 'SUB'+x)
+    cmt(o,'SUB'+x)
     o.t(f'_mc6800_sub(c, _GD(), {"true" if x == "A" else "false"}, false);');
 
 #-------------------------------------------------------------------------------
+def i_cmpx(o,x):
+    cmt(o,'CMP'+x)
+    o.t(f'_mc6800_cmp(c, _GD(), {"true" if x == "A" else "false"});')
+
+#-------------------------------------------------------------------------------
 def i_sbcx(o,x):
-    cmt(o, 'SBC'+x)
+    cmt(o,'SBC'+x)
     o.t(f'_mc6800_sub(c, _GD(), {"true" if x == "A" else "false"}, true);');
+
+#-------------------------------------------------------------------------------
+def i_andx(o,x):
+    cmt(o,'AND'+x)
+    o.t(f'_VF(false);c->{x}&=_GD();_NZ(c->{x});')
+
+#-------------------------------------------------------------------------------
+def i_bitx(o,x):
+    cmt(o,'BIT'+x)
+    o.t(f'_VF(false);_NZ(c->{x}&_GD());')
 
 #-------------------------------------------------------------------------------
 def i_ldax(o,x):
@@ -262,14 +277,36 @@ def i_stax(o,x):
     o.t(f'_SD(c->{x});_WR();')
 
 #-------------------------------------------------------------------------------
+def i_eorx(o,x):
+    cmt(o,'EOR'+x)
+    o.t(f'_VF(false);c->{x}^=_GD();_NZ(c->{x});')
+
+#-------------------------------------------------------------------------------
 def i_adcx(o,x):
-    cmt(o, 'ADC'+x)
+    cmt(o,'ADC'+x)
     o.t(f'_mc6800_add(c, _GD(), {"true" if x == "A" else "false"}, true);');
 
 #-------------------------------------------------------------------------------
+def i_orax(o,x):
+    cmt(o,'ORA'+x)
+    o.t(f'_VF(false);c->{x}|=_GD();_NZ(c->{x});')
+
+#-------------------------------------------------------------------------------
 def i_addx(o,x):
-    cmt(o, 'ADD'+x)
+    cmt(o,'ADD'+x)
     o.t(f'_mc6800_add(c, _GD(), {"true" if x == "A" else "false"}, false);');
+
+#-------------------------------------------------------------------------------
+def i_lds(o):
+    cmt(o,'LDS')
+    o.t(f'c->SP=_GD()<<8;_SA(_GA()+1);');
+    o.t(f'_VF(false);c->SP|=_GD();_NZ16(c->SP);');
+
+#-------------------------------------------------------------------------------
+def i_ldx(o):
+    cmt(o,'LDX')
+    o.t(f'c->IX=_GD()<<8;_SA(_GA()+1);');
+    o.t(f'_VF(false);c->IX|=_GD();_NZ16(c->IX);');
 
 #-------------------------------------------------------------------------------
 def enc_op(op):
@@ -307,20 +344,22 @@ def enc_op(op):
         if cccc == 0:        i_subx(o,acc)
         if cccc == 1:        i_nop(o)
         if cccc == 2:        i_sbcx(o,acc)
-        if cccc == 3:        i_nop(o)
-        if cccc == 4:        i_nop(o)
-        if cccc == 5:        i_nop(o)
+        if cccc == 3:        i_cmpx(o,acc)
+        if cccc == 4:        i_andx(o,acc)
+        if cccc == 5:        i_bitx(o,acc)
         if cccc == 6:        i_ldax(o,acc)
         if cccc == 7:
             if bb == 0:        i_nop(o)
             else:              i_stax(o,acc)
-        if cccc == 8:        i_nop(o)
+        if cccc == 8:        i_eorx(o,acc)
         if cccc == 9:        i_adcx(o,acc)
-        if cccc == 10:       i_nop(o)
+        if cccc == 10:       i_orax(o,acc)
         if cccc == 11:       i_addx(o,acc)
         if cccc == 12:       i_nop(o)
         if cccc == 13:       i_nop(o)
-        if cccc == 14:       i_nop(o)
+        if cccc == 14:
+            if aa == 0:        i_lds(o)
+            else:              i_ldx(o)
         if cccc == 15:       i_nop(o)
 
     # since read operation is actually done on clock
@@ -346,3 +385,7 @@ with open(InpPath, 'r') as inf:
     c_src = templ.safe_substitute(decode_block=out_lines)
     with open(OutPath, 'w') as outf:
         outf.write(c_src)
+
+
+# TODO
+# implement half-carry flag on sub/add/sbc/adc

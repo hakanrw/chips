@@ -237,7 +237,7 @@ uint64_t mc6800_tick(mc6800_t* cpu, uint64_t pins);
 #endif
 
 /* helper macros and functions for code-generated instruction decoder */
-#define _MC6800_NZ(p,v) ((p&~(MC6800_NF|MC6800_ZF))|((v&0xFF)?(v&MC6800_NF):MC6800_ZF))
+#define _MC6800_NZ(p,v) ((p&~(MC6800_NF|MC6800_ZF))|((v&0xFF)?((v)>>4&MC6800_NF):MC6800_ZF))
 
 static inline void _mc6800_add(mc6800_t* cpu, uint8_t val, bool a, bool carry_mode) {
     uint16_t sum = (a?cpu->A:cpu->B) + val;
@@ -281,6 +281,19 @@ static inline void _mc6800_sub(mc6800_t* cpu, uint8_t val, bool a, bool carry_mo
     }
 }
 
+static inline void _mc6800_cmp(mc6800_t* cpu, uint8_t val, bool a) {
+    uint16_t diff = (a?cpu->A:cpu->B) - val;
+    cpu->P &= ~(MC6800_VF|MC6800_CF);
+    cpu->P = _MC6800_NZ(cpu->P, (uint8_t)diff);
+    if (((a?cpu->A:cpu->B)^val) & ((a?cpu->A:cpu->B)^diff) & 0x80) {
+        cpu->P |= MC6800_VF;
+    }
+    if (diff & 0xFF00) {
+        cpu->P |= MC6800_CF;
+    }
+}
+
+
 #undef _MC6800_NZ
 
 uint64_t mc6800_init(mc6800_t* c) {
@@ -313,13 +326,10 @@ uint64_t mc6800_init(mc6800_t* c) {
 /* a memory write tick */
 #define _WR() _OFF(MC6800_RW);
 /* set N and Z flags depending on value */
-#define _NZ(v) c->P=((c->P&~(MC6800_NF|MC6800_ZF))|((v&0xFF)?(v&MC6800_NF):MC6800_ZF))
-/* set V flag if parameters are equal */
-#define _VF(r,v) c->P=((c->P&~MC6800_VF)|(r==v?MC6800_VF:0));
-/* set V flag if addition results in two's complement overflow */
-#define _VFA(r,v) c->P=((c->P&~MC6800_VF)|(((r>127&&v>127&&r+v<=127)||(r<=127&&v<=127&&r+v>127))?MC6800_VF:0)));
-/* set V flag if subtraction results in two's complement overflow */
-#define _VFS(r,v) assert(false);
+#define _NZ(v) c->P=((c->P&~(MC6800_NF|MC6800_ZF))|((v&0xFF)?((v)>>4&MC6800_NF):MC6800_ZF))
+#define _NZ16(v) c->P=((c->P&~(MC6800_NF|MC6800_ZF))|((v&0xFFFF)?((v)>>12&MC6800_NF):MC6800_ZF))
+/* set V flag if true */
+#define _VF(v) c->P=((c->P&~MC6800_VF)|(v?MC6800_VF:0));
 /* set H and C flags in case of carry on addition */
 #define _CF(r,v) c->P=(c->P&~(MC6800_CF|MC6800_HF))|(r+v<r?MC6800_CF)
 /* set VMA (address bus unstable) */
