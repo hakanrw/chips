@@ -353,9 +353,9 @@ def enc_op(op):
         accx = aa == 2
         acc = "A" if accx else "B"
         if cccc == 0:        i_subx(o,acc)
-        if cccc == 1:        i_nop(o)
+        if cccc == 1:        i_cmpx(o,acc)
         if cccc == 2:        i_sbcx(o,acc)
-        if cccc == 3:        i_cmpx(o,acc)
+        if cccc == 3:        i_nop(o)
         if cccc == 4:        i_andx(o,acc)
         if cccc == 5:        i_bitx(o,acc)
         if cccc == 6:        i_ldax(o,acc)
