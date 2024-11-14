@@ -84,8 +84,8 @@ ops = [
         [[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___]],
 
         # NEG         # --         # --         # COM        # LSR        # --         # ROR        # ASR        # ASL        # ROL        # DEC        # --         # INC        # TST        # JMP        # CLR
-        [[A_IDX,M_R_],[A____,M___],[A____,M___],[A_IDX,M_R_],[A_IDX,M__W],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_RW],[A____,M___],[A_IDX,M_RW],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_]],
-        [[A_ABS,M_R_],[A____,M___],[A____,M___],[A_ABS,M_R_],[A_ABS,M__W],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_RW],[A____,M___],[A_ABS,M_RW],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_]],
+        [[A_IDX,M_R_],[A____,M___],[A____,M___],[A_IDX,M_R_],[A_IDX,M__W],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_RW],[A____,M___],[A_IDX,M_RW],[A_IDX,M_R_],[A_IMM,M_R_],[A_IDX,M__W]],
+        [[A_ABS,M_R_],[A____,M___],[A____,M___],[A_ABS,M_R_],[A_ABS,M__W],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_RW],[A____,M___],[A_ABS,M_RW],[A_ABS,M_R_],[A_I16,M_R_],[A_ABS,M__W]],
     ],
     # aa = 10
     [
@@ -190,12 +190,13 @@ def enc_addr(op, addr_mode, mem_access):
     elif addr_mode == A_IDX:
         # (zp,X)
         op.t('_SA(c->PC++);')
-        op.t('c->AD=_GD();_SA(c->AD);')
-        op.t('c->AD=(c->AD+c->IX)&0xFF;_SA(c->AD);')
-        op.t('_SA((c->AD+1)&0xFF);c->AD=_GD();')
-        op.t('_SA((_GD()<<8)|c->AD);')
-        # TODO
-        pass
+        op.t('c->AD=_GD()+c->IX;_VMA();')  # these two lines are made inefficient on
+        op.t('_SA(c->AD);_VMA();')         # purpose to match mc6800 cycle count
+        op.t('')
+        if mem_access in [M__W, M_RW]:
+            op.ta('_VMA();') # VMA is low, calculating address
+            if mem_access == M_RW:
+                op.t('') # wait on next instruction for read fetch
     else:
         # invalid instruction
         pass
@@ -239,6 +240,29 @@ def i_incx(o,x):
 def i_inc(o):
     cmt(o,'INC')
     o.t('_VF(_GD()==0x7F);c->AD=_GD()+1;_NZ(c->AD);_SD(c->AD);_WR();')
+
+#-------------------------------------------------------------------------------
+def i_jmpidx(o):
+    cmt(o,'JMP')
+    o.t('c->AD=_GD()+c->IX;_VMA();')
+    o.t('c->PC=c->AD;_VMA();')
+    o.t('')
+
+#-------------------------------------------------------------------------------
+def i_jmpabs(o):
+    cmt(o,'JMP')
+    o.t('c->AD=_GD()<<8;_SA(_GA()+1);')
+    o.t('c->PC=c->AD|_GD();')
+
+#-------------------------------------------------------------------------------
+def i_clrx(o,x):
+    cmt(o,'CLR'+x)
+    o.t(f'_VF(false);_CF(false);c->{x}=0;_NZ(0);')
+
+#-------------------------------------------------------------------------------
+def i_clr(o):
+    cmt(o,'CLR')
+    o.t('_VF(false);_CF(false);_NZ(0);_SD(0);_WR();')
 
 #-------------------------------------------------------------------------------
 def i_subx(o,x):
@@ -339,15 +363,25 @@ def enc_op(op):
         i_nop(o)
     elif aa == 1:
         if cccc == 10:       # DEC
-            if bb == 0:        i_decx(o, "A")
+            if bb == 0:          i_decx(o, "A")
             elif bb == 1:        i_decx(o, "B")
             elif bb == 2:        i_dec(o)
             elif bb == 3:        i_dec(o)
         elif cccc == 12:     # INC
-            if bb == 0:        i_incx(o, "A")
+            if bb == 0:          i_incx(o, "A")
             elif bb == 1:        i_incx(o, "B")
             elif bb == 2:        i_inc(o)
             elif bb == 3:        i_inc(o)
+        elif cccc == 14:     # JMP
+            if bb == 0:          i_nop(o)
+            elif bb == 1:        i_nop(o)
+            elif bb == 2:        i_jmpidx(o)
+            elif bb == 3:        i_jmpabs(o)
+        elif cccc == 15:     # CLR
+            if bb == 0:          i_clrx(o, "A")
+            elif bb == 1:        i_clrx(o, "B")
+            elif bb == 2:        i_clr(o)
+            elif bb == 3:        i_clr(o)
         else:                i_nop(o)
     else:
         accx = aa == 2

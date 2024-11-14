@@ -329,9 +329,9 @@ uint64_t mc6800_init(mc6800_t* c) {
 #define _NZ(v) c->P=((c->P&~(MC6800_NF|MC6800_ZF))|((v&0xFF)?((v)>>4&MC6800_NF):MC6800_ZF))
 #define _NZ16(v) c->P=((c->P&~(MC6800_NF|MC6800_ZF))|((v&0xFFFF)?((v)>>12&MC6800_NF):MC6800_ZF))
 /* set V flag if true */
-#define _VF(v) c->P=((c->P&~MC6800_VF)|(v?MC6800_VF:0));
-/* set H and C flags in case of carry on addition */
-#define _CF(r,v) c->P=(c->P&~(MC6800_CF|MC6800_HF))|(r+v<r?MC6800_CF)
+#define _VF(v) c->P=((c->P&~MC6800_VF)|(v?MC6800_VF:0))
+/* set CF flag if true */
+#define _CF(v) c->P=((c->P&~MC6800_CF)|(v?MC6800_CF:0))
 /* set VMA (address bus unstable) */
 #define _VMA() _OFF(MC6800_VMA);
 #if defined(_MSC_VER)
