@@ -238,6 +238,62 @@ uint64_t mc6800_tick(mc6800_t* cpu, uint64_t pins);
 
 /* helper macros and functions for code-generated instruction decoder */
 #define _MC6800_NZ(p,v) ((p&~(MC6800_NF|MC6800_ZF))|((v&0xFF)?((v)>>4&MC6800_NF):MC6800_ZF))
+#define _MC6800_NZ16(p,v) ((p&~(MC6800_NF|MC6800_ZF))|((v&0xFFFF)?((v)>>12&MC6800_NF):MC6800_ZF))
+#define _MC6800_VF(p,v) ((p&~MC6800_VF)|(v?MC6800_VF:0))
+
+static inline uint8_t _mc6800_asl(mc6800_t* cpu, uint8_t v) {
+    cpu->P = (_MC6800_NZ(cpu->P, v<<1) & ~MC6800_CF) | ((v & 0x80) ? MC6800_CF:0);
+    return v<<1;
+}
+
+static inline uint8_t _mc6800_lsr(mc6800_t* cpu, uint8_t v) {
+    cpu->P = (_MC6800_NZ(cpu->P, v>>1) & ~MC6800_CF) | ((v & 0x01) ? MC6800_CF:0);
+    return v>>1;
+}
+
+static inline uint8_t _mc6800_rol(mc6800_t* cpu, uint8_t v) {
+    bool carry = v & 0x80;
+    cpu->P &= ~(MC6800_NF|MC6800_ZF|MC6800_CF);
+    if (carry) {
+        cpu->P |= MC6800_CF;
+    }
+    v <<= 1;
+    if (carry) {
+        v |= 1;
+    }
+    cpu->P = _MC6800_NZ(cpu->P, v);
+    
+    if (((cpu->P & MC6800_NF) && !(cpu->P & MC6800_CF)) || 
+        (!(cpu->P & MC6800_NF) && (cpu->P & MC6800_CF))) {
+        cpu->P = _MC6800_VF(cpu->P, true);
+    } else {
+        cpu->P = _MC6800_VF(cpu->P, false);
+    }
+        
+    return v;
+}
+
+static inline uint8_t _mc6800_ror(mc6800_t* cpu, uint8_t v) {
+    bool carry = v & 0x01;
+    cpu->P &= ~(MC6800_NF|MC6800_ZF|MC6800_CF);
+    if (carry) {
+        cpu->P |= MC6800_CF;
+    }
+    v >>= 1;
+    if (carry) {
+        v |= 0x80;
+    }
+    cpu->P = _MC6800_NZ(cpu->P, v);
+
+    if (((cpu->P & MC6800_NF) && !(cpu->P & MC6800_CF)) || 
+        (!(cpu->P & MC6800_NF) && (cpu->P & MC6800_CF))) {
+        cpu->P = _MC6800_VF(cpu->P, true);
+    } else {
+        cpu->P = _MC6800_VF(cpu->P, false);
+    }
+        
+    return v;
+}
 
 static inline void _mc6800_add(mc6800_t* cpu, uint8_t val, bool a, bool carry_mode) {
     uint16_t sum = (a?cpu->A:cpu->B) + val;
@@ -293,6 +349,14 @@ static inline void _mc6800_cmp(mc6800_t* cpu, uint8_t val, bool a) {
     }
 }
 
+static inline void _mc6800_cpx(mc6800_t* cpu, uint16_t val) {
+    uint16_t diff = cpu->IX - val;
+    cpu->P &= ~(MC6800_VF|MC6800_CF);
+    cpu->P = _MC6800_NZ16(cpu->P, diff);
+    if ((cpu->IX^val) & (cpu->IX^diff) & 0x80) {
+        cpu->P |= MC6800_VF;
+    }
+}
 
 #undef _MC6800_NZ
 
