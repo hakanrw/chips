@@ -71,7 +71,7 @@ ops = [
         [[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___]],
 
         # BRA         # --         # BHI        # BLS        # BCC        # BCS        # BNE        # BEQ        # BVC        # BVS        # BPL        # BMI        # BGE        # BLT        # BGT        # BLE
-        [[A_IMM,M___],[A_IMM,M___],[A_IMM,M___],[A_IMM,M___],[A_IMM,M___],[A_IMM,M___],[A_IMM,M___],[A_IMM,M___],[A_IMM,M___],[A_IMM,M___],[A_IMM,M___],[A_IMM,M___],[A_IMM,M___],[A_IMM,M___],[A_IMM,M___],[A_IMM,M___]],
+        [[A_IMM,M_R_],[A_IMM,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_]],
 
         # TSX         # INS        # PULA       # PULB       # DES        # TXS        # PSHA       # PSHB       # --         # RTS        # --         # RTI        # --         # --         # WAI        # SWI
         [[A____,M___],[A____,M___],[A____,M_R_],[A____,M_R_],[A____,M___],[A____,M___],[A____,M__W],[A____,M__W],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___]],
@@ -220,6 +220,61 @@ def i_swi(o):
     o.t('9')
     o.t('10')
     o.t('11')
+
+#-------------------------------------------------------------------------------
+def i_bra(o):
+    cmt(o,'BRA')
+    o.t('c->PC+=(int8_t)_GD();')
+
+#-------------------------------------------------------------------------------
+def i_bhi(o):
+    cmt(o,'BHI')
+    o.t('if(!(c->P&MC6800_CF)&&!(c->P&MC6800_ZF))c->PC+=(int8_t)_GD();')
+
+#-------------------------------------------------------------------------------
+def i_bls(o):
+    cmt(o,'BLS')
+    o.t('if((c->P&MC6800_CF)||(c->P&MC6800_ZF))c->PC+=(int8_t)_GD();')
+
+#-------------------------------------------------------------------------------
+def i_bcc(o):
+    cmt(o,'BCC')
+    o.t('if(!(c->P&MC6800_CF))c->PC+=(int8_t)_GD();')
+
+#-------------------------------------------------------------------------------
+def i_bcs(o):
+    cmt(o,'BCS')
+    o.t('if(c->P&MC6800_CF)c->PC+=(int8_t)_GD();')
+
+#-------------------------------------------------------------------------------
+def i_bne(o):
+    cmt(o,'BNE')
+    o.t('if(!(c->P&MC6800_ZF))c->PC+=(int8_t)_GD();')
+
+#-------------------------------------------------------------------------------
+def i_beq(o):
+    cmt(o,'BEQ')
+    o.t('if(c->P&MC6800_ZF)c->PC+=(int8_t)_GD();')
+
+#-------------------------------------------------------------------------------
+def i_bvc(o):
+    cmt(o,'BVC')
+    o.t('if(!(c->P&MC6800_VF))c->PC+=(int8_t)_GD();')
+
+#-------------------------------------------------------------------------------
+def i_bvs(o):
+    cmt(o,'BVS')
+    o.t('if(c->P&MC6800_VF)c->PC+=(int8_t)_GD();')
+
+#-------------------------------------------------------------------------------
+def i_bpl(o):
+    cmt(o,'BPL')
+    o.t('if(!(c->P&MC6800_NF))c->PC+=(int8_t)_GD();')
+
+#-------------------------------------------------------------------------------
+def i_bmi(o):
+    cmt(o,'BMI')
+    o.t('if(c->P&MC6800_NF)c->PC+=(int8_t)_GD();')
 
 #-------------------------------------------------------------------------------
 def i_lsrx(o,x):
@@ -426,34 +481,53 @@ def enc_op(op):
     enc_addr(o, addr_mode, mem_access);
     # actual instruction
     if aa == 0:
-        i_nop(o)
+        if bb == 0:              i_nop(o)
+        elif bb == 1:            i_nop(o)
+        elif bb == 2:
+            if cccc == 0:        i_bra(o)
+            elif cccc == 1:      i_nop(o)
+            elif cccc == 2:      i_bhi(o)
+            elif cccc == 3:      i_bls(o)
+            elif cccc == 4:      i_bcc(o)
+            elif cccc == 5:      i_bcs(o)
+            elif cccc == 6:      i_bne(o)
+            elif cccc == 7:      i_beq(o)
+            elif cccc == 8:      i_bvc(o)
+            elif cccc == 9:      i_bvs(o)
+            elif cccc == 10:     i_bpl(o)
+            elif cccc == 11:     i_bmi(o)
+            elif cccc == 12:     i_nop(o)
+            elif cccc == 13:     i_nop(o)
+            elif cccc == 14:     i_nop(o)
+            elif cccc == 15:     i_nop(o)
+        elif bb == 3:            i_nop(o)
     elif aa == 1:
         if cccc == 4:        # LSR    
             if bb == 0:          i_lsrx(o, "A")
             elif bb == 1:        i_lsrx(o, "B")
             elif bb == 2:        i_lsr(o)
             elif bb == 3:        i_lsr(o)
-        elif cccc == 6:        # ROR    
+        elif cccc == 6:      # ROR    
             if bb == 0:          i_rorx(o, "A")
             elif bb == 1:        i_rorx(o, "B")
             elif bb == 2:        i_ror(o)
             elif bb == 3:        i_ror(o)
-        elif cccc == 7:        # ASR    
+        elif cccc == 7:      # ASR    
             if bb == 0:          i_asrx(o, "A")
             elif bb == 1:        i_asrx(o, "B")
             elif bb == 2:        i_asr(o)
             elif bb == 3:        i_asr(o)
-        elif cccc == 8:        # ASL    
+        elif cccc == 8:      # ASL    
             if bb == 0:          i_aslx(o, "A")
             elif bb == 1:        i_aslx(o, "B")
             elif bb == 2:        i_asl(o)
             elif bb == 3:        i_asl(o)
-        elif cccc == 9:        # ROL    
+        elif cccc == 9:      # ROL    
             if bb == 0:          i_rolx(o, "A")
             elif bb == 1:        i_rolx(o, "B")
             elif bb == 2:        i_rol(o)
             elif bb == 3:        i_rol(o)
-        elif cccc == 10:       # DEC
+        elif cccc == 10:     # DEC
             if bb == 0:          i_decx(o, "A")
             elif bb == 1:        i_decx(o, "B")
             elif bb == 2:        i_dec(o)
@@ -497,7 +571,7 @@ def enc_op(op):
         if cccc == 10:       i_orax(o,acc)      # ORA
         if cccc == 11:       i_addx(o,acc)      # ADD
         if cccc == 12:       i_cpx(o)           # CPX
-        if cccc == 13:       i_nop(o)
+        if cccc == 13:       i_nop(o)           # TODO BSR/JSR 
         if cccc == 14:
             if aa == 2:        i_lds(o)         # LDS
             else:              i_ldx(o)         # LDX
@@ -534,3 +608,7 @@ with open(InpPath, 'r') as inf:
 # TODO
 # implement half-carry flag on sub/add/sbc/adc
 # fix wrong cycle count on TST (must be 6 on abs, 7 on idx)
+# implement last 4 branch operations
+# implement bsr/jsr
+# imlement nega/coma
+# implement rows 0,1,3
