@@ -29,9 +29,9 @@
     *   NMI --->|           |...      *
     *  HALT --->|           |---> A15 *
     * RESET --->|           |         *
-    *    RW <---|   MC68H   |         *
-    *    BA <---|           |         *
-    *           |           |<--> D0  *
+    *           |   MC68H   |         *
+    *           |           |         *
+    *    RW <---|           |<--> D0  *
     *   VMA <---|           |...      *
     *           |           |<--> D7  *
     *           |           |         *
@@ -497,6 +497,9 @@ $decode_block
 #undef _RD
 #undef _WR
 #undef _NZ
+#undef _NZ16
+#undef _CF
+#undef _IF
 #undef _VF
 #undef _VMA
 #endif /* CHIPS_IMPL */

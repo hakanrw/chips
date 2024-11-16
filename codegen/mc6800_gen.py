@@ -267,7 +267,7 @@ def i_tba(o):
 #-------------------------------------------------------------------------------
 def i_daa(o):
     cmt(o,'DAA')
-    o.t('_mc6800_daa();')
+    o.t('_mc6800_daa(c);')
 
 #-------------------------------------------------------------------------------
 def i_aba(o):
@@ -328,6 +328,49 @@ def i_bpl(o):
 def i_bmi(o):
     cmt(o,'BMI')
     o.t('if(c->P&MC6800_NF)c->PC+=(int8_t)_GD();')
+
+#-------------------------------------------------------------------------------
+def i_tsx(o):
+    cmt(o,'TSX')
+    o.t('c->IX=c->SP+1;')
+    o.t('_VMA();')
+    o.t('_VMA();')
+
+#-------------------------------------------------------------------------------
+def i_ins(o):
+    cmt(o,'INS')
+    o.t('c->SP++;')
+    o.t('_VMA();')
+    o.t('_VMA();')
+
+#-------------------------------------------------------------------------------
+def i_pulx(o,x):
+    cmt(o,'PUL'+x)
+    o.t(f'c->SP++;_VMA();')
+    o.t(f'_SA(c->SP);_VMA();')
+    o.t(f'') # reads here
+    o.t(f'c->{x}=_GD();')
+
+#-------------------------------------------------------------------------------
+def i_des(o):
+    cmt(o,'DES')
+    o.t('c->SP--;')
+    o.t('_VMA();')
+    o.t('_VMA();')
+
+#-------------------------------------------------------------------------------
+def i_txs(o):
+    cmt(o,'TXS')
+    o.t('c->SP=c->IX-1;')
+    o.t('_VMA();')
+    o.t('_VMA();')
+
+#-------------------------------------------------------------------------------
+def i_pshx(o,x):
+    cmt(o,'PSH'+x)
+    o.t(f'_SA(c->SP);_VMA();')
+    o.t(f'_SD(c->{x});_WR();')
+    o.t(f'c->SP--;_VMA();')
 
 #-------------------------------------------------------------------------------
 def i_swi(o):
@@ -580,12 +623,12 @@ def enc_op(op):
             elif cccc == 7:      i_tpa(o)       # TPA
             elif cccc == 8:      i_inx(o)       # INX
             elif cccc == 9:      i_dex(o)       # DEX
-            elif cccc == 10:     i_nop(o)       # CLV TODO
-            elif cccc == 11:     i_nop(o)       # SEV TODO
-            elif cccc == 12:     i_nop(o)       # CLC TODO
-            elif cccc == 13:     i_nop(o)       # SEC TODO
-            elif cccc == 14:     i_nop(o)       # CLI TODO
-            elif cccc == 15:     i_nop(o)       # SEI TODO
+            elif cccc == 10:     i_nop(o)       # CLV
+            elif cccc == 11:     i_nop(o)       # SEV
+            elif cccc == 12:     i_nop(o)       # CLC
+            elif cccc == 13:     i_nop(o)       # SEC
+            elif cccc == 14:     i_nop(o)       # CLI
+            elif cccc == 15:     i_nop(o)       # SEI
         elif bb == 1:
             if cccc == 0:        i_sba(o)       # SBA
             elif cccc == 1:      i_cba(o)       # CBA
@@ -620,7 +663,23 @@ def enc_op(op):
             elif cccc == 13:     i_nop(o)       # BLT TODO
             elif cccc == 14:     i_nop(o)       # BGT TODO
             elif cccc == 15:     i_nop(o)       # BLE TODO
-        elif bb == 3:            i_nop(o)
+        elif bb == 3:
+            if cccc == 0:        i_tsx(o)       # TSX
+            elif cccc == 1:      i_ins(o)       # INS
+            elif cccc == 2:      i_pulx(o, "A") # PULA
+            elif cccc == 3:      i_pulx(o, "B") # PULB
+            elif cccc == 4:      i_des(o)       # DES
+            elif cccc == 5:      i_txs(o)       # TXS
+            elif cccc == 6:      i_pshx(o, "A") # PSHA
+            elif cccc == 7:      i_pshx(o, "B") # PSHB
+            elif cccc == 8:      i_nop(o)
+            elif cccc == 9:      i_nop(o)       # RTS TODO
+            elif cccc == 10:     i_nop(o)
+            elif cccc == 11:     i_nop(o)       # RTI TODO
+            elif cccc == 12:     i_nop(o)
+            elif cccc == 13:     i_nop(o)
+            elif cccc == 14:     i_nop(o)       # WAI TODO
+            elif cccc == 15:     i_nop(o)       # SWI TODO
     elif aa == 1:
         if cccc == 0:        # NEG
             if bb == 0:          i_negx(o, "A")
@@ -740,3 +799,4 @@ with open(InpPath, 'r') as inf:
 # fix wrong cycle count on TST (must be 6 on abs, 7 on idx)
 # implement last 4 branch operations
 # implement bsr/jsr
+# check cycle counts for all instructions
