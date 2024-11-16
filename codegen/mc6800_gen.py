@@ -27,18 +27,6 @@ def flag_name(f):
     elif f == XF: return 'X'
     elif f == YF: return 'Y'
 
-def branch_name(m, v):
-    # TODO
-    if m == NF:
-        return 'BPL' if v==0 else 'BMI'
-    elif m == VF:
-        return 'BVC' if v==0 else 'BVS'
-    elif m == CF:
-        return 'BCC' if v==0 else 'BCS'
-    elif m == ZF:
-        return 'BNE' if v==0 else 'BEQ'
-    # TODO
-
 # addressing mode constants
 A____ = 0       # no addressing mode
 A_IMM = 1       # immediate
@@ -84,8 +72,8 @@ ops = [
         [[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___]],
 
         # NEG         # --         # --         # COM        # LSR        # --         # ROR        # ASR        # ASL        # ROL        # DEC        # --         # INC        # TST        # JMP        # CLR
-        [[A_IDX,M_R_],[A____,M___],[A____,M___],[A_IDX,M_R_],[A_IDX,M_RW],[A____,M___],[A_IDX,M_RW],[A_IDX,M_RW],[A_IDX,M_RW],[A_IDX,M_RW],[A_IDX,M_RW],[A____,M___],[A_IDX,M_RW],[A_IDX,M_R_],[A_IMM,M_R_],[A_IDX,M__W]],
-        [[A_ABS,M_R_],[A____,M___],[A____,M___],[A_ABS,M_R_],[A_ABS,M_RW],[A____,M___],[A_ABS,M_RW],[A_ABS,M_RW],[A_ABS,M_RW],[A_ABS,M_RW],[A_ABS,M_RW],[A____,M___],[A_ABS,M_RW],[A_ABS,M_R_],[A_I16,M_R_],[A_ABS,M__W]],
+        [[A_IDX,M_RW],[A____,M___],[A____,M___],[A_IDX,M_RW],[A_IDX,M_RW],[A____,M___],[A_IDX,M_RW],[A_IDX,M_RW],[A_IDX,M_RW],[A_IDX,M_RW],[A_IDX,M_RW],[A____,M___],[A_IDX,M_RW],[A_IDX,M_R_],[A_IMM,M_R_],[A_IDX,M__W]],
+        [[A_ABS,M_RW],[A____,M___],[A____,M___],[A_ABS,M_RW],[A_ABS,M_RW],[A____,M___],[A_ABS,M_RW],[A_ABS,M_RW],[A_ABS,M_RW],[A_ABS,M_RW],[A_ABS,M_RW],[A____,M___],[A_ABS,M_RW],[A_ABS,M_R_],[A_I16,M_R_],[A_ABS,M__W]],
     ],
     # aa = 10
     [
@@ -277,6 +265,26 @@ def i_bmi(o):
     o.t('if(c->P&MC6800_NF)c->PC+=(int8_t)_GD();')
 
 #-------------------------------------------------------------------------------
+def i_negx(o,x):
+    cmt(o,'NEG'+x)
+    o.t(f'_VF(c->{x}==0x80);_CF(c->{x}!=0x00);c->{x}=~c->{x}+1;_NZ(c->{x});')
+
+#-------------------------------------------------------------------------------
+def i_neg(o):
+    cmt(o,'NEG')
+    o.t('_VF(_GD()==0x80);_CF(_GD()!=0x00);_SD(~_GD()+1);_NZ(_GD());_WR();')
+    
+#-------------------------------------------------------------------------------
+def i_comx(o,x):
+    cmt(o,'COM'+x)
+    o.t(f'_VF(false);_CF(true);c->{x}=~c->{x};_NZ(c->{x});')
+
+#-------------------------------------------------------------------------------
+def i_com(o):
+    cmt(o,'COM')
+    o.t('_VF(false);_CF(true);_SD(~_GD());_NZ(_GD());_WR();')
+
+#-------------------------------------------------------------------------------
 def i_lsrx(o,x):
     cmt(o,'LSR'+x)
     o.t(f'c->{x}=_mc6800_lsr(c, c->{x});')
@@ -284,7 +292,7 @@ def i_lsrx(o,x):
 #-------------------------------------------------------------------------------
 def i_lsr(o):
     cmt(o,'LSR')
-    o.t(f'_SD(_mc6800_lsr(c, _GD()));_WR();')
+    o.t('_SD(_mc6800_lsr(c, _GD()));_WR();')
 
 #-------------------------------------------------------------------------------
 def i_rorx(o,x):
@@ -294,7 +302,7 @@ def i_rorx(o,x):
 #-------------------------------------------------------------------------------
 def i_ror(o):
     cmt(o,'ROR')
-    o.t(f'_SD(_mc6800_ror(c, _GD()));_WR();')
+    o.t('_SD(_mc6800_ror(c, _GD()));_WR();')
 
 #-------------------------------------------------------------------------------
 def i_asrx(o,x):
@@ -304,7 +312,7 @@ def i_asrx(o,x):
 #-------------------------------------------------------------------------------
 def i_asr(o):
     cmt(o,'ASR')
-    o.t(f'_SD((_GD()&0x80)|_mc6800_lsr(c, _GD()));_NZ(_GA());_WR();')
+    o.t('_SD((_GD()&0x80)|_mc6800_lsr(c, _GD()));_NZ(_GA());_WR();')
 
 #-------------------------------------------------------------------------------
 def i_aslx(o,x):
@@ -314,7 +322,7 @@ def i_aslx(o,x):
 #-------------------------------------------------------------------------------
 def i_asl(o):
     cmt(o,'ASL')
-    o.t(f'_SD(_mc6800_asl(c, _GD()));_WR();')
+    o.t('_SD(_mc6800_asl(c, _GD()));_WR();')
     
 #-------------------------------------------------------------------------------
 def i_rolx(o,x):
@@ -324,7 +332,7 @@ def i_rolx(o,x):
 #-------------------------------------------------------------------------------
 def i_rol(o):
     cmt(o,'ROL')
-    o.t(f'_SD(_mc6800_rol(c, _GD()));_WR();')
+    o.t('_SD(_mc6800_rol(c, _GD()));_WR();')
 
 #-------------------------------------------------------------------------------
 def i_decx(o,x):
@@ -354,7 +362,7 @@ def i_tstx(o,x):
 #-------------------------------------------------------------------------------
 def i_tst(o):
     cmt(o,'TST')
-    o.t(f'_VF(false);_CF(false);_NZ(_GD());')
+    o.t('_VF(false);_CF(false);_NZ(_GD());')
 
 #-------------------------------------------------------------------------------
 def i_jmpidx(o):
@@ -502,7 +510,17 @@ def enc_op(op):
             elif cccc == 15:     i_nop(o)
         elif bb == 3:            i_nop(o)
     elif aa == 1:
-        if cccc == 4:        # LSR    
+        if cccc == 0:        # NEG    
+            if bb == 0:          i_negx(o, "A")
+            elif bb == 1:        i_negx(o, "B")
+            elif bb == 2:        i_neg(o)
+            elif bb == 3:        i_neg(o)
+        elif cccc == 3:      # COM    
+            if bb == 0:          i_comx(o, "A")
+            elif bb == 1:        i_comx(o, "B")
+            elif bb == 2:        i_com(o)
+            elif bb == 3:        i_com(o)
+        elif cccc == 4:      # LSR    
             if bb == 0:          i_lsrx(o, "A")
             elif bb == 1:        i_lsrx(o, "B")
             elif bb == 2:        i_lsr(o)
@@ -578,7 +596,7 @@ def enc_op(op):
         if cccc == 15:
             if bb == 0:        i_nop(o)
             elif aa == 2:        i_sts(o)       # STS
-            else:        	 i_stx(o)           # STX
+            else:        	 i_stx(o)       # STX
 
     # since read operation is actually done on clock
     # phase 2 but we required another cycle,
