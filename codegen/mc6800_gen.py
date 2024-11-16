@@ -62,7 +62,7 @@ ops = [
         [[A_IMM,M_R_],[A_IMM,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_]],
 
         # TSX         # INS        # PULA       # PULB       # DES        # TXS        # PSHA       # PSHB       # --         # RTS        # --         # RTI        # --         # --         # WAI        # SWI
-        [[A____,M___],[A____,M___],[A____,M_R_],[A____,M_R_],[A____,M___],[A____,M___],[A____,M__W],[A____,M__W],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___]],
+        [[A____,M___],[A____,M___],[A____,M_R_],[A____,M_R_],[A____,M___],[A____,M___],[A____,M__W],[A____,M__W],[A____,M___],[A____,M_R_],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___]],
     ],
     # aa = 01
     [
@@ -79,9 +79,9 @@ ops = [
     [
         # SUBA        # CMPA       # SBCA       # --         # ANDA       # BITA       # LDAA       # STAA       # EORA       # ADCA       # ORAA       # ADDA       # CPX        # BSR/JSR    # LDS        # STS
         [[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A____,M___],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_IMM,M_R_],[A_I16,M_R_],[A____,M___]],
-        [[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W]],
-        [[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W]],
-        [[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W]],
+        [[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M__W],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A_ZER,M_R_],[A____,M___],[A_ZER,M_R_],[A_ZER,M__W]],
+        [[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A____,M___],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M__W],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IDX,M_R_],[A_IMM,M_R_],[A_IDX,M_R_],[A_IDX,M__W]],
+        [[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A____,M___],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M__W],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_ABS,M_R_],[A_I16,M_R_],[A_ABS,M_R_],[A_ABS,M__W]],
     ],
     # aa = 11
     [
@@ -98,7 +98,7 @@ class opcode:
         self.code = op
         self.cmt = None
         self.i = 0
-        self.src = [None] * 8
+        self.src = [None] * 16
     def t(self, src):
         self.src[self.i] = src
         self.i += 1
@@ -373,6 +373,15 @@ def i_pshx(o,x):
     o.t(f'c->SP--;_VMA();')
 
 #-------------------------------------------------------------------------------
+def i_rts(o):
+    cmt(o,'RTS')
+    o.t('c->SP++;_SA(c->SP);_VMA();')
+    o.t('') # reads here
+    o.t('c->PC=_GD()<<8;c->SP++;_SA(c->SP);')
+    o.t('') # reads here
+    o.t('c->PC|=_GD();')
+
+#-------------------------------------------------------------------------------
 def i_swi(o):
     cmt(o, 'SWI')
     o.t('1')
@@ -491,8 +500,8 @@ def i_tst(o):
 def i_jmpidx(o):
     cmt(o,'JMP')
     o.t('c->AD=_GD()+c->IX;_VMA();')
-    o.t('c->PC=c->AD;_VMA();')
-    o.t('')
+    o.t('_VMA();')
+    o.t('c->PC=c->AD;')
 
 #-------------------------------------------------------------------------------
 def i_jmpabs(o):
@@ -570,6 +579,40 @@ def i_cpx(o):
     cmt(o,'CPX')
     o.t('c->AD=_GD();c->AD<<=8;_SA(_GA()+1);')
     o.t('c->AD=c->AD|_GD();_mc6800_cpx(c, c->AD);')
+
+#-------------------------------------------------------------------------------
+def i_bsr(o):
+    cmt(o,'BSR')
+    o.t('c->AD=c->PC+(int8_t)_GD();_SA(c->SP);_VMA();')
+    o.t('_SD(c->PC&0xFF);_WR();')
+    o.t('c->SP--;_VMA();')
+    o.t('_SA(c->SP);_VMA();')
+    o.t('_SD(c->PC>>8);_WR();')
+    o.t('c->SP--;_VMA();')
+    o.t('c->PC=c->AD;')
+
+#-------------------------------------------------------------------------------
+def i_jsridx(o):
+    cmt(o,'JSR')
+    o.t('c->AD=_GD()+c->IX;_SA(c->SP);_VMA();')
+    o.t('_SD(c->PC&0xFF);_WR();')
+    o.t('c->SP--;_VMA();')
+    o.t('_SA(c->SP);_VMA();')
+    o.t('_SD(c->PC>>8);_WR();')
+    o.t('c->SP--;_VMA();')
+    o.t('c->PC=c->AD;')
+
+#-------------------------------------------------------------------------------
+def i_jsrabs(o):
+    cmt(o,'JSR')
+    o.t('c->AD=_GD();c->AD<<=8;_SA(_GA()+1);')
+    o.t('c->AD=c->AD|_GD();_SA(c->SP);_VMA();')
+    o.t('_SD(c->PC&0xFF);_WR();')
+    o.t('c->SP--;_VMA();')
+    o.t('_SA(c->SP);_VMA();')
+    o.t('_SD(c->PC>>8);_WR();')
+    o.t('c->SP--;_VMA();')
+    o.t('c->PC=c->AD;')
 
 #-------------------------------------------------------------------------------
 def i_lds(o):
@@ -673,7 +716,7 @@ def enc_op(op):
             elif cccc == 6:      i_pshx(o, "A") # PSHA
             elif cccc == 7:      i_pshx(o, "B") # PSHB
             elif cccc == 8:      i_nop(o)
-            elif cccc == 9:      i_nop(o)       # RTS TODO
+            elif cccc == 9:      i_rts(o)       # RTS
             elif cccc == 10:     i_nop(o)
             elif cccc == 11:     i_nop(o)       # RTI TODO
             elif cccc == 12:     i_nop(o)
@@ -760,7 +803,11 @@ def enc_op(op):
         if cccc == 10:       i_orax(o,acc)      # ORA
         if cccc == 11:       i_addx(o,acc)      # ADD
         if cccc == 12:       i_cpx(o)           # CPX
-        if cccc == 13:       i_nop(o)           # TODO BSR/JSR
+        if cccc == 13:       
+            if bb == 0:        i_bsr(o)         # BSR
+            elif bb == 1:      i_nop(o)
+            elif bb == 2:      i_jsridx(o)      # JSR
+            elif bb == 3:      i_jsrabs(o)
         if cccc == 14:
             if aa == 2:        i_lds(o)         # LDS
             else:              i_ldx(o)         # LDX
