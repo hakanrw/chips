@@ -295,53 +295,43 @@ static inline uint8_t _mc6800_ror(mc6800_t* cpu, uint8_t v) {
     return v;
 }
 
-static inline void _mc6800_add(mc6800_t* cpu, uint8_t val, bool a, bool carry_mode) {
-    uint16_t sum = (a?cpu->A:cpu->B) + val;
+static inline uint8_t _mc6800_add(mc6800_t* cpu, uint8_t curr, uint8_t val, bool carry_mode) {
+    uint16_t sum = curr + val;
     if (carry_mode) {
         sum += cpu->P & MC6800_CF ? 1 : 0;
     }
     cpu->P &= ~(MC6800_VF|MC6800_CF);
     cpu->P = _MC6800_NZ(cpu->P, sum);
-    if (~((a?cpu->A:cpu->B)^val) & ((a?cpu->A:cpu->B)^sum) & 0x80) {
+    if (~(curr^val) & (curr^sum) & 0x80) {
         cpu->P |= MC6800_VF;
     }
     if (sum & 0xFF00) {
         cpu->P |= MC6800_CF;
     }
-    if (a) {
-        cpu->A = sum & 0xFF;
-    }
-    else {
-        cpu->B = sum & 0xFF;
-    }
+    return sum & 0xFF;
 }
 
-static inline void _mc6800_sub(mc6800_t* cpu, uint8_t val, bool a, bool carry_mode) {
-    uint16_t diff = (a?cpu->A:cpu->B) - val;
+static inline uint8_t _mc6800_sub(mc6800_t* cpu, uint8_t curr, uint8_t val, bool carry_mode) {
+    uint16_t diff = curr - val;
     if (carry_mode) {
         diff -= cpu->P & MC6800_CF ? 1 : 0;
     }
     cpu->P &= ~(MC6800_VF|MC6800_CF);
     cpu->P = _MC6800_NZ(cpu->P, (uint8_t)diff);
-    if (((a?cpu->A:cpu->B)^val) & ((a?cpu->A:cpu->B)^diff) & 0x80) {
+    if ((curr^val) & (curr^diff) & 0x80) {
         cpu->P |= MC6800_VF;
     }
     if (diff & 0xFF00) {
         cpu->P |= MC6800_CF;
     }
-    if (a) {
-        cpu->A = diff & 0xFF;
-    }
-    else {
-        cpu->B = diff & 0xFF;
-    }
+    return diff & 0xFF;
 }
 
-static inline void _mc6800_cmp(mc6800_t* cpu, uint8_t val, bool a) {
-    uint16_t diff = (a?cpu->A:cpu->B) - val;
+static inline void _mc6800_cmp(mc6800_t* cpu, uint8_t curr, uint8_t val) {
+    uint16_t diff = curr - val;
     cpu->P &= ~(MC6800_VF|MC6800_CF);
     cpu->P = _MC6800_NZ(cpu->P, (uint8_t)diff);
-    if (((a?cpu->A:cpu->B)^val) & ((a?cpu->A:cpu->B)^diff) & 0x80) {
+    if ((curr^val) & (curr^diff) & 0x80) {
         cpu->P |= MC6800_VF;
     }
     if (diff & 0xFF00) {
@@ -358,12 +348,16 @@ static inline void _mc6800_cpx(mc6800_t* cpu, uint16_t val) {
     }
 }
 
+static inline void _mc6800_daa(mc6800_t* cpu) {
+    puts("_mc6800_daa: not implemented");
+}
+
 #undef _MC6800_NZ
 
 uint64_t mc6800_init(mc6800_t* c) {
     CHIPS_ASSERT(c);
     memset(c, 0, sizeof(*c));
-    c->P = MC6800_ZF;
+    c->P = MC6800_XF | MC6800_YF | MC6800_ZF;
     c->PINS = MC6800_RW | MC6800_RESET | MC6800_VMA;
     c->next_instr = true;
     return c->PINS;
@@ -392,9 +386,13 @@ uint64_t mc6800_init(mc6800_t* c) {
 /* set N and Z flags depending on value */
 #define _NZ(v) c->P=((c->P&~(MC6800_NF|MC6800_ZF))|((v&0xFF)?((v)>>4&MC6800_NF):MC6800_ZF))
 #define _NZ16(v) c->P=((c->P&~(MC6800_NF|MC6800_ZF))|((v&0xFFFF)?((v)>>12&MC6800_NF):MC6800_ZF))
+/* set I flag if true */
+#define _IF(v) c->P=((c->P&~MC6800_IF)|(v?MC6800_IF:0))
+/* set Z flag if true */
+#define _ZF(v) c->P=((c->P&~MC6800_ZF)|(v?MC6800_ZF:0))
 /* set V flag if true */
 #define _VF(v) c->P=((c->P&~MC6800_VF)|(v?MC6800_VF:0))
-/* set CF flag if true */
+/* set C flag if true */
 #define _CF(v) c->P=((c->P&~MC6800_CF)|(v?MC6800_CF:0))
 /* set VMA (address bus unstable) */
 #define _VMA() _OFF(MC6800_VMA);

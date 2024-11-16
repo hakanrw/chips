@@ -195,19 +195,84 @@ def i_nop(o):
     o.t('')
 
 #-------------------------------------------------------------------------------
-def i_swi(o):
-    cmt(o, 'SWI')
-    o.t('1')
-    o.t('2')
-    o.t('3')
-    o.t('4')
-    o.t('5')
-    o.t('6')
-    o.t('7')
-    o.t('8')
-    o.t('9')
-    o.t('10')
-    o.t('11')
+def i_tap(o):
+    cmt(o,'TAP')
+    o.t('c->P=0xC0|c->A;') # most significant two bits of P is 1
+
+#-------------------------------------------------------------------------------
+def i_tpa(o):
+    cmt(o,'TPA')
+    o.t('c->A=c->P;')
+
+#-------------------------------------------------------------------------------
+def i_inx(o):
+    cmt(o,'INX')
+    o.t('c->IX++;_ZF(c->IX);')
+
+#-------------------------------------------------------------------------------
+def i_dex(o):
+    cmt(o,'DEX')
+    o.t('c->IX--;_ZF(c->IX);')
+
+#-------------------------------------------------------------------------------
+def i_clv(o):
+    cmt(o,'CLV')
+    o.t('_VF(false);')
+
+#-------------------------------------------------------------------------------
+def i_sev(o):
+    cmt(o,'SEV')
+    o.t('_VF(true);')
+
+#-------------------------------------------------------------------------------
+def i_clc(o):
+    cmt(o,'CLC')
+    o.t('_CF(false);')
+
+#-------------------------------------------------------------------------------
+def i_sec(o):
+    cmt(o,'SEC')
+    o.t('_CF(true);')
+
+#-------------------------------------------------------------------------------
+def i_cli(o):
+    cmt(o,'CLI')
+    o.t('_IF(false);')
+
+#-------------------------------------------------------------------------------
+def i_sei(o):
+    cmt(o,'SEI')
+    o.t('_IF(true);')
+
+#-------------------------------------------------------------------------------
+def i_sba(o):
+    cmt(o,'SBA')
+    o.t('c->A=_mc6800_sub(c, c->A, c->B, false);')
+
+#-------------------------------------------------------------------------------
+def i_cba(o):
+    cmt(o,'CBA')
+    o.t('_mc6800_sub(c, c->A, c->B, false);')
+
+#-------------------------------------------------------------------------------
+def i_tab(o):
+    cmt(o,'TAB')
+    o.t('_VF(false);c->B=c->A;_NZ(c->B);')
+
+#-------------------------------------------------------------------------------
+def i_tba(o):
+    cmt(o,'TBA')
+    o.t('_VF(false);c->A=c->B;_NZ(c->A);')
+
+#-------------------------------------------------------------------------------
+def i_daa(o):
+    cmt(o,'DAA')
+    o.t('_mc6800_daa();')
+
+#-------------------------------------------------------------------------------
+def i_aba(o):
+    cmt(o,'ABA')
+    o.t('c->A=_mc6800_add(c, c->A, c->B, false);')
 
 #-------------------------------------------------------------------------------
 def i_bra(o):
@@ -265,6 +330,21 @@ def i_bmi(o):
     o.t('if(c->P&MC6800_NF)c->PC+=(int8_t)_GD();')
 
 #-------------------------------------------------------------------------------
+def i_swi(o):
+    cmt(o, 'SWI')
+    o.t('1')
+    o.t('2')
+    o.t('3')
+    o.t('4')
+    o.t('5')
+    o.t('6')
+    o.t('7')
+    o.t('8')
+    o.t('9')
+    o.t('10')
+    o.t('11')
+
+#-------------------------------------------------------------------------------
 def i_negx(o,x):
     cmt(o,'NEG'+x)
     o.t(f'_VF(c->{x}==0x80);_CF(c->{x}!=0x00);c->{x}=~c->{x}+1;_NZ(c->{x});')
@@ -273,7 +353,7 @@ def i_negx(o,x):
 def i_neg(o):
     cmt(o,'NEG')
     o.t('_VF(_GD()==0x80);_CF(_GD()!=0x00);_SD(~_GD()+1);_NZ(_GD());_WR();')
-    
+
 #-------------------------------------------------------------------------------
 def i_comx(o,x):
     cmt(o,'COM'+x)
@@ -323,7 +403,7 @@ def i_aslx(o,x):
 def i_asl(o):
     cmt(o,'ASL')
     o.t('_SD(_mc6800_asl(c, _GD()));_WR();')
-    
+
 #-------------------------------------------------------------------------------
 def i_rolx(o,x):
     cmt(o,'ROL'+x)
@@ -390,17 +470,17 @@ def i_clr(o):
 #-------------------------------------------------------------------------------
 def i_subx(o,x):
     cmt(o,'SUB'+x)
-    o.t(f'_mc6800_sub(c, _GD(), {"true" if x == "A" else "false"}, false);');
+    o.t(f'c->{x}=_mc6800_sub(c, c->{x}, _GD(), false);');
 
 #-------------------------------------------------------------------------------
 def i_cmpx(o,x):
     cmt(o,'CMP'+x)
-    o.t(f'_mc6800_cmp(c, _GD(), {"true" if x == "A" else "false"});')
+    o.t(f'_mc6800_cmp(c, c->{x}, _GD());')
 
 #-------------------------------------------------------------------------------
 def i_sbcx(o,x):
     cmt(o,'SBC'+x)
-    o.t(f'_mc6800_sub(c, _GD(), {"true" if x == "A" else "false"}, true);');
+    o.t(f'c->{x}=_mc6800_sub(c, c->{x}, _GD(), true);');
 
 #-------------------------------------------------------------------------------
 def i_andx(o,x):
@@ -430,7 +510,7 @@ def i_eorx(o,x):
 #-------------------------------------------------------------------------------
 def i_adcx(o,x):
     cmt(o,'ADC'+x)
-    o.t(f'_mc6800_add(c, _GD(), {"true" if x == "A" else "false"}, true);');
+    o.t(f'c->{x}=_mc6800_add(c, c->{x}, _GD(), true);');
 
 #-------------------------------------------------------------------------------
 def i_orax(o,x):
@@ -440,7 +520,7 @@ def i_orax(o,x):
 #-------------------------------------------------------------------------------
 def i_addx(o,x):
     cmt(o,'ADD'+x)
-    o.t(f'_mc6800_add(c, _GD(), {"true" if x == "A" else "false"}, false);');
+    o.t(f'c->{x}=_mc6800_add(c, c->{x}, _GD(), false);');
 
 #-------------------------------------------------------------------------------
 def i_cpx(o):
@@ -489,58 +569,90 @@ def enc_op(op):
     enc_addr(o, addr_mode, mem_access);
     # actual instruction
     if aa == 0:
-        if bb == 0:              i_nop(o)
-        elif bb == 1:            i_nop(o)
-        elif bb == 2:
-            if cccc == 0:        i_bra(o)
-            elif cccc == 1:      i_nop(o)
-            elif cccc == 2:      i_bhi(o)
-            elif cccc == 3:      i_bls(o)
-            elif cccc == 4:      i_bcc(o)
-            elif cccc == 5:      i_bcs(o)
-            elif cccc == 6:      i_bne(o)
-            elif cccc == 7:      i_beq(o)
-            elif cccc == 8:      i_bvc(o)
-            elif cccc == 9:      i_bvs(o)
-            elif cccc == 10:     i_bpl(o)
-            elif cccc == 11:     i_bmi(o)
+        if bb == 0:
+            if cccc == 0:        i_nop(o)
+            elif cccc == 1:      i_nop(o)       # NOP
+            elif cccc == 2:      i_nop(o)
+            elif cccc == 3:      i_nop(o)
+            elif cccc == 4:      i_nop(o)
+            elif cccc == 5:      i_nop(o)
+            elif cccc == 6:      i_tap(o)       # TAP
+            elif cccc == 7:      i_tpa(o)       # TPA
+            elif cccc == 8:      i_inx(o)       # INX
+            elif cccc == 9:      i_dex(o)       # DEX
+            elif cccc == 10:     i_nop(o)       # CLV TODO
+            elif cccc == 11:     i_nop(o)       # SEV TODO
+            elif cccc == 12:     i_nop(o)       # CLC TODO
+            elif cccc == 13:     i_nop(o)       # SEC TODO
+            elif cccc == 14:     i_nop(o)       # CLI TODO
+            elif cccc == 15:     i_nop(o)       # SEI TODO
+        elif bb == 1:
+            if cccc == 0:        i_sba(o)       # SBA
+            elif cccc == 1:      i_cba(o)       # CBA
+            elif cccc == 2:      i_nop(o)
+            elif cccc == 3:      i_nop(o)
+            elif cccc == 4:      i_nop(o)
+            elif cccc == 5:      i_nop(o)
+            elif cccc == 6:      i_tab(o)       # TAB
+            elif cccc == 7:      i_tba(o)       # TBA
+            elif cccc == 8:      i_nop(o)
+            elif cccc == 9:      i_daa(o)       # DAA TODO
+            elif cccc == 10:     i_nop(o)
+            elif cccc == 11:     i_aba(o)       # ABA
             elif cccc == 12:     i_nop(o)
             elif cccc == 13:     i_nop(o)
             elif cccc == 14:     i_nop(o)
             elif cccc == 15:     i_nop(o)
+        elif bb == 2:
+            if cccc == 0:        i_bra(o)       # BRA
+            elif cccc == 1:      i_nop(o)
+            elif cccc == 2:      i_bhi(o)       # BHI
+            elif cccc == 3:      i_bls(o)       # BLS
+            elif cccc == 4:      i_bcc(o)       # BCC
+            elif cccc == 5:      i_bcs(o)       # BCS
+            elif cccc == 6:      i_bne(o)       # BNE
+            elif cccc == 7:      i_beq(o)       # BEQ
+            elif cccc == 8:      i_bvc(o)       # BVC
+            elif cccc == 9:      i_bvs(o)       # BVS
+            elif cccc == 10:     i_bpl(o)       # BPL
+            elif cccc == 11:     i_bmi(o)       # BMI
+            elif cccc == 12:     i_nop(o)       # BGE TODO
+            elif cccc == 13:     i_nop(o)       # BLT TODO
+            elif cccc == 14:     i_nop(o)       # BGT TODO
+            elif cccc == 15:     i_nop(o)       # BLE TODO
         elif bb == 3:            i_nop(o)
     elif aa == 1:
-        if cccc == 0:        # NEG    
+        if cccc == 0:        # NEG
             if bb == 0:          i_negx(o, "A")
             elif bb == 1:        i_negx(o, "B")
             elif bb == 2:        i_neg(o)
             elif bb == 3:        i_neg(o)
-        elif cccc == 3:      # COM    
+        elif cccc == 3:      # COM
             if bb == 0:          i_comx(o, "A")
             elif bb == 1:        i_comx(o, "B")
             elif bb == 2:        i_com(o)
             elif bb == 3:        i_com(o)
-        elif cccc == 4:      # LSR    
+        elif cccc == 4:      # LSR
             if bb == 0:          i_lsrx(o, "A")
             elif bb == 1:        i_lsrx(o, "B")
             elif bb == 2:        i_lsr(o)
             elif bb == 3:        i_lsr(o)
-        elif cccc == 6:      # ROR    
+        elif cccc == 6:      # ROR
             if bb == 0:          i_rorx(o, "A")
             elif bb == 1:        i_rorx(o, "B")
             elif bb == 2:        i_ror(o)
             elif bb == 3:        i_ror(o)
-        elif cccc == 7:      # ASR    
+        elif cccc == 7:      # ASR
             if bb == 0:          i_asrx(o, "A")
             elif bb == 1:        i_asrx(o, "B")
             elif bb == 2:        i_asr(o)
             elif bb == 3:        i_asr(o)
-        elif cccc == 8:      # ASL    
+        elif cccc == 8:      # ASL
             if bb == 0:          i_aslx(o, "A")
             elif bb == 1:        i_aslx(o, "B")
             elif bb == 2:        i_asl(o)
             elif bb == 3:        i_asl(o)
-        elif cccc == 9:      # ROL    
+        elif cccc == 9:      # ROL
             if bb == 0:          i_rolx(o, "A")
             elif bb == 1:        i_rolx(o, "B")
             elif bb == 2:        i_rol(o)
@@ -589,14 +701,14 @@ def enc_op(op):
         if cccc == 10:       i_orax(o,acc)      # ORA
         if cccc == 11:       i_addx(o,acc)      # ADD
         if cccc == 12:       i_cpx(o)           # CPX
-        if cccc == 13:       i_nop(o)           # TODO BSR/JSR 
+        if cccc == 13:       i_nop(o)           # TODO BSR/JSR
         if cccc == 14:
             if aa == 2:        i_lds(o)         # LDS
             else:              i_ldx(o)         # LDX
         if cccc == 15:
             if bb == 0:        i_nop(o)
-            elif aa == 2:        i_sts(o)       # STS
-            else:        	 i_stx(o)       # STX
+            elif aa == 2:      i_sts(o)         # STS
+            else:              i_stx(o)         # STX
 
     # since read operation is actually done on clock
     # phase 2 but we required another cycle,
@@ -628,5 +740,3 @@ with open(InpPath, 'r') as inf:
 # fix wrong cycle count on TST (must be 6 on abs, 7 on idx)
 # implement last 4 branch operations
 # implement bsr/jsr
-# imlement nega/coma
-# implement rows 0,1,3
