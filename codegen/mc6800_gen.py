@@ -382,19 +382,51 @@ def i_rts(o):
     o.t('c->PC|=_GD();')
 
 #-------------------------------------------------------------------------------
+# internal push mechanism of interrupt handlers
+def _i_swi_push(o,val):
+    o.ta(f'_SA(c->SP);_SD({val});_WR();')
+    o.t('c->SP--;')
+
+#-------------------------------------------------------------------------------    
+# internal pull mechanism of interrupt handlers
+def _i_swi_pull(o):
+    o.ta(f'c->SP++;_SA(c->SP);')
+
+#-------------------------------------------------------------------------------
+def i_rti(o):
+    cmt(o,'RTI')
+    o.t('') # used by first o.ta of _i_swi_pull
+    _i_swi_pull(o)
+    o.t('c->P=_GD();')
+    _i_swi_pull(o)
+    o.t('c->B=_GD();')
+    _i_swi_pull(o)
+    o.t('c->A=_GD();')
+    _i_swi_pull(o)
+    o.t('c->IX=_GD()<<8;')
+    _i_swi_pull(o)
+    o.t('c->IX|=_GD();')
+    _i_swi_pull(o)
+    o.t('c->PC=_GD()<<8;')
+    _i_swi_pull(o)
+    o.t('c->PC|=_GD();_VMA();')
+    o.t('') # match mc6800 cycle count
+
+#-------------------------------------------------------------------------------
 def i_swi(o):
-    cmt(o, 'SWI')
-    o.t('1')
-    o.t('2')
-    o.t('3')
-    o.t('4')
-    o.t('5')
-    o.t('6')
-    o.t('7')
-    o.t('8')
-    o.t('9')
-    o.t('10')
-    o.t('11')
+    cmt(o,'SWI')
+    o.t('') # used by first o.ta of _i_swi_push
+    _i_swi_push(o,"c->PC")
+    _i_swi_push(o,"c->PC>>8")
+    _i_swi_push(o,"c->IX")
+    _i_swi_push(o,"c->IX>>8")
+    _i_swi_push(o,"c->A")
+    _i_swi_push(o,"c->B")
+    _i_swi_push(o,"c->P")
+    o.ta('_IF(true);_VMA();')
+    o.t('_SA(0xFFFF-5);')
+    o.t('c->PC=_GD()<<8;_SA(0xFFFF-4);')
+    o.t('c->PC|=_GD();')
 
 #-------------------------------------------------------------------------------
 def i_negx(o,x):
@@ -584,7 +616,7 @@ def i_cpx(o):
 def i_bsr(o):
     cmt(o,'BSR')
     o.t('c->AD=c->PC+(int8_t)_GD();_SA(c->SP);_VMA();')
-    o.t('_SD(c->PC&0xFF);_WR();')
+    o.t('_SD(c->PC);_WR();')
     o.t('c->SP--;_VMA();')
     o.t('_SA(c->SP);_VMA();')
     o.t('_SD(c->PC>>8);_WR();')
@@ -595,7 +627,7 @@ def i_bsr(o):
 def i_jsridx(o):
     cmt(o,'JSR')
     o.t('c->AD=_GD()+c->IX;_SA(c->SP);_VMA();')
-    o.t('_SD(c->PC&0xFF);_WR();')
+    o.t('_SD(c->PC);_WR();')
     o.t('c->SP--;_VMA();')
     o.t('_SA(c->SP);_VMA();')
     o.t('_SD(c->PC>>8);_WR();')
@@ -607,7 +639,7 @@ def i_jsrabs(o):
     cmt(o,'JSR')
     o.t('c->AD=_GD();c->AD<<=8;_SA(_GA()+1);')
     o.t('c->AD=c->AD|_GD();_SA(c->SP);_VMA();')
-    o.t('_SD(c->PC&0xFF);_WR();')
+    o.t('_SD(c->PC);_WR();')
     o.t('c->SP--;_VMA();')
     o.t('_SA(c->SP);_VMA();')
     o.t('_SD(c->PC>>8);_WR();')
@@ -630,13 +662,13 @@ def i_ldx(o):
 def i_sts(o):
     cmt(o,'STS')
     o.t(f'_NZ16(c->SP);_SD(c->SP>>8);_WR();');
-    o.t(f'_VF(false);_SA(_GA()+1);_SD(c->SP&0xFF);_WR();');
+    o.t(f'_VF(false);_SA(_GA()+1);_SD(c->SP);_WR();');
 
 #-------------------------------------------------------------------------------
 def i_stx(o):
     cmt(o,'STX')
     o.t(f'_NZ16(c->IX);_SD(c->IX>>8);_WR();');
-    o.t(f'_VF(false);_SA(_GA()+1);_SD(c->IX&0xFF);_WR();');
+    o.t(f'_VF(false);_SA(_GA()+1);_SD(c->IX);_WR();');
 
 #-------------------------------------------------------------------------------
 def enc_op(op):
@@ -666,12 +698,12 @@ def enc_op(op):
             elif cccc == 7:      i_tpa(o)       # TPA
             elif cccc == 8:      i_inx(o)       # INX
             elif cccc == 9:      i_dex(o)       # DEX
-            elif cccc == 10:     i_nop(o)       # CLV
-            elif cccc == 11:     i_nop(o)       # SEV
-            elif cccc == 12:     i_nop(o)       # CLC
-            elif cccc == 13:     i_nop(o)       # SEC
-            elif cccc == 14:     i_nop(o)       # CLI
-            elif cccc == 15:     i_nop(o)       # SEI
+            elif cccc == 10:     i_clv(o)       # CLV
+            elif cccc == 11:     i_sev(o)       # SEV
+            elif cccc == 12:     i_clc(o)       # CLC
+            elif cccc == 13:     i_sec(o)       # SEC
+            elif cccc == 14:     i_cli(o)       # CLI
+            elif cccc == 15:     i_sei(o)       # SEI
         elif bb == 1:
             if cccc == 0:        i_sba(o)       # SBA
             elif cccc == 1:      i_cba(o)       # CBA
@@ -718,11 +750,11 @@ def enc_op(op):
             elif cccc == 8:      i_nop(o)
             elif cccc == 9:      i_rts(o)       # RTS
             elif cccc == 10:     i_nop(o)
-            elif cccc == 11:     i_nop(o)       # RTI TODO
+            elif cccc == 11:     i_rti(o)       # RTI
             elif cccc == 12:     i_nop(o)
             elif cccc == 13:     i_nop(o)
             elif cccc == 14:     i_nop(o)       # WAI TODO
-            elif cccc == 15:     i_nop(o)       # SWI TODO
+            elif cccc == 15:     i_swi(o)       # SWI
     elif aa == 1:
         if cccc == 0:        # NEG
             if bb == 0:          i_negx(o, "A")
