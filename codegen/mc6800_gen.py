@@ -416,16 +416,16 @@ def i_rti(o):
 def i_swi(o):
     cmt(o,'SWI')
     o.t('') # used by first o.ta of _i_swi_push
-    _i_swi_push(o,"c->PC")
-    _i_swi_push(o,"c->PC>>8")
-    _i_swi_push(o,"c->IX")
-    _i_swi_push(o,"c->IX>>8")
-    _i_swi_push(o,"c->A")
-    _i_swi_push(o,"c->B")
-    _i_swi_push(o,"c->P")
+    _i_swi_push(o,'c->PC')
+    _i_swi_push(o,'c->PC>>8')
+    _i_swi_push(o,'c->IX')
+    _i_swi_push(o,'c->IX>>8')
+    _i_swi_push(o,'c->A')
+    _i_swi_push(o,'c->B')
+    _i_swi_push(o,'c->P')
     o.ta('_IF(true);_VMA();')
-    o.t('_SA(0xFFFF-5);')
-    o.t('c->PC=_GD()<<8;_SA(0xFFFF-4);')
+    o.t('c->AD=_GBRK();_SA(c->AD++);')    # MC6800_RESET skips to here first
+    o.t('c->PC=_GD()<<8;_SA(c->AD);c->brk_flags=0;')
     o.t('c->PC|=_GD();')
 
 #-------------------------------------------------------------------------------

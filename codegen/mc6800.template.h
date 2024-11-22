@@ -396,6 +396,13 @@ uint64_t mc6800_init(mc6800_t* c) {
 #define _CF(v) c->P=((c->P&~MC6800_CF)|(v?MC6800_CF:0))
 /* set VMA (address bus unstable) */
 #define _VMA() _OFF(MC6800_VMA);
+/* get current interrupt pointer (RES=0xFFFE, IRQ=0xFFF8, NMI=0xFFFC, SWI=0xFFFA) */
+#define _GBRK() \
+    (c->brk_flags&MC6800_BRK_IRQ ? (0xFFFF - 7) : \
+     c->brk_flags&MC6800_BRK_RESET ? (0xFFFF - 1) : \
+     c->brk_flags&MC6800_BRK_NMI ? (0xFFFF - 3) : \
+    (0xFFFF - 5))
+
 #if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable:4244)   /* conversion from 'uint16_t' to 'uint8_t', possible loss of data */
@@ -459,7 +466,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         // if interrupt or reset was requested, force a BRK instruction
         if (c->brk_flags) {
             // start interrupt sequence
-            c->IR = 0x3B; // SWI
+            c->IR = (0x3F<<4)|8; // SWI
             pins &= ~MC6800_RESET;
         }
         else {
@@ -502,4 +509,5 @@ $decode_block
 #undef _IF
 #undef _VF
 #undef _VMA
+#undef _GBRK
 #endif /* CHIPS_IMPL */
