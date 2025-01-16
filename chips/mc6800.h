@@ -352,6 +352,21 @@ static inline void _mc6800_daa(mc6800_t* cpu) {
     puts("_mc6800_daa: not implemented");
 }
 
+static inline void _mc6800_update_brk_flags(mc6800_t* c, uint64_t pins) {
+    printf("irqpip: %d\n", c->irq_pip);
+    if ((c->irq_pip & 0x400) && !(c->P & MC6800_IF)) {
+        c->brk_flags |= MC6800_BRK_IRQ;
+    }
+    if (c->nmi_pip & 0xFC00) {
+        c->brk_flags |= MC6800_BRK_NMI;
+    }
+    if (pins & MC6800_RESET) {
+        c->brk_flags |= MC6800_BRK_RESET;
+    }
+    c->irq_pip &= 0x3FF;
+    c->nmi_pip &= 0x3FF;
+}
+
 #undef _MC6800_NZ
 
 uint64_t mc6800_init(mc6800_t* c) {
@@ -419,6 +434,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
             // TODO check
             c->nmi_pip |= 0x100;
         }
+
 	// IRQ test is level triggered
         if ((pins & MC6800_IRQ) && (0 == (c->P & MC6800_IF))) {
             // TODO interrupt handler
@@ -451,23 +467,16 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         //  - RES behaves slightly different than on a real 6502, we go
         //    into RES state as soon as the pin goes active, from there
         //    on, behaviour is 'standard'
-        if (c->irq_pip & 0x400) {
-            c->brk_flags |= MC6800_BRK_IRQ;
-        }
-        if (c->nmi_pip & 0xFC00) {
-            c->brk_flags |= MC6800_BRK_NMI;
-        }
-        if (pins & MC6800_RESET) {
-            c->brk_flags |= MC6800_BRK_RESET;
-        }
-        c->irq_pip &= 0x3FF;
-        c->nmi_pip &= 0x3FF;
+        _mc6800_update_brk_flags(c, pins);
 
         // if interrupt or reset was requested, force a BRK instruction
         if (c->brk_flags) {
             // start interrupt sequence
-            c->IR = (0x3F<<4)|8; // SWI
-            pins &= ~MC6800_RESET;
+            if (c->brk_flags & MC6800_BRK_RESET)
+                c->IR = (0x3F<<4)|8; // SWI + 8 (skip stack pushes)
+            else
+                c->IR = 0x3F<<4; // SWI
+            pins &= ~MC6800_RESET; // TODO: normally, reset should be cleared by user, not by us
         }
         else {
             c->PC++;
@@ -1230,9 +1239,9 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x2B<<4)|13: assert(false);break;
         case (0x2B<<4)|14: assert(false);break;
         case (0x2B<<4)|15: assert(false);break;
-    /* NOP # */
+    /* BGE # */
         case (0x2C<<4)|0: _SA(c->PC++);break;
-        case (0x2C<<4)|1: _FETCH();break;
+        case (0x2C<<4)|1: if(((c->P&MC6800_NF)&&(c->P&MC6800_VF))||(!(c->P&MC6800_NF)&&!(c->P&MC6800_VF)))c->PC+=(int8_t)_GD();_FETCH();break;
         case (0x2C<<4)|2: assert(false);break;
         case (0x2C<<4)|3: assert(false);break;
         case (0x2C<<4)|4: assert(false);break;
@@ -1247,9 +1256,9 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x2C<<4)|13: assert(false);break;
         case (0x2C<<4)|14: assert(false);break;
         case (0x2C<<4)|15: assert(false);break;
-    /* NOP # */
+    /* BLT # */
         case (0x2D<<4)|0: _SA(c->PC++);break;
-        case (0x2D<<4)|1: _FETCH();break;
+        case (0x2D<<4)|1: if(((c->P&MC6800_NF)&&!(c->P&MC6800_VF))||(!(c->P&MC6800_NF)&&(c->P&MC6800_VF)))c->PC+=(int8_t)_GD();_FETCH();break;
         case (0x2D<<4)|2: assert(false);break;
         case (0x2D<<4)|3: assert(false);break;
         case (0x2D<<4)|4: assert(false);break;
@@ -1264,9 +1273,9 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x2D<<4)|13: assert(false);break;
         case (0x2D<<4)|14: assert(false);break;
         case (0x2D<<4)|15: assert(false);break;
-    /* NOP # */
+    /* BGT # */
         case (0x2E<<4)|0: _SA(c->PC++);break;
-        case (0x2E<<4)|1: _FETCH();break;
+        case (0x2E<<4)|1: if(!(c->P&MC6800_ZF)&&(((c->P&MC6800_NF)&&(c->P&MC6800_VF))||(!(c->P&MC6800_NF)&&!(c->P&MC6800_VF))))c->PC+=(int8_t)_GD();_FETCH();break;
         case (0x2E<<4)|2: assert(false);break;
         case (0x2E<<4)|3: assert(false);break;
         case (0x2E<<4)|4: assert(false);break;
@@ -1281,9 +1290,9 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x2E<<4)|13: assert(false);break;
         case (0x2E<<4)|14: assert(false);break;
         case (0x2E<<4)|15: assert(false);break;
-    /* NOP # */
+    /* BLE # */
         case (0x2F<<4)|0: _SA(c->PC++);break;
-        case (0x2F<<4)|1: _FETCH();break;
+        case (0x2F<<4)|1: if((c->P&MC6800_ZF)||(((c->P&MC6800_NF)&&!(c->P&MC6800_VF))||(!(c->P&MC6800_NF)&&(c->P&MC6800_VF))))c->PC+=(int8_t)_GD();_FETCH();break;
         case (0x2F<<4)|2: assert(false);break;
         case (0x2F<<4)|3: assert(false);break;
         case (0x2F<<4)|4: assert(false);break;
@@ -1536,20 +1545,20 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x3D<<4)|13: assert(false);break;
         case (0x3D<<4)|14: assert(false);break;
         case (0x3D<<4)|15: assert(false);break;
-    /* NOP  */
-        case (0x3E<<4)|0: _VMA();break;
-        case (0x3E<<4)|1: _FETCH();break;
-        case (0x3E<<4)|2: assert(false);break;
-        case (0x3E<<4)|3: assert(false);break;
-        case (0x3E<<4)|4: assert(false);break;
-        case (0x3E<<4)|5: assert(false);break;
-        case (0x3E<<4)|6: assert(false);break;
-        case (0x3E<<4)|7: assert(false);break;
-        case (0x3E<<4)|8: assert(false);break;
-        case (0x3E<<4)|9: assert(false);break;
-        case (0x3E<<4)|10: assert(false);break;
-        case (0x3E<<4)|11: assert(false);break;
-        case (0x3E<<4)|12: assert(false);break;
+    /* WAI  */
+        case (0x3E<<4)|0: _SA(c->SP);_SD(c->PC);_WR();break;
+        case (0x3E<<4)|1: c->SP--;_SA(c->SP);_SD(c->PC>>8);_WR();break;
+        case (0x3E<<4)|2: c->SP--;_SA(c->SP);_SD(c->IX);_WR();break;
+        case (0x3E<<4)|3: c->SP--;_SA(c->SP);_SD(c->IX>>8);_WR();break;
+        case (0x3E<<4)|4: c->SP--;_SA(c->SP);_SD(c->A);_WR();break;
+        case (0x3E<<4)|5: c->SP--;_SA(c->SP);_SD(c->B);_WR();break;
+        case (0x3E<<4)|6: c->SP--;_SA(c->SP);_SD(c->P);_WR();break;
+        case (0x3E<<4)|7: c->SP--;_VMA();break;
+        case (0x3E<<4)|8: _mc6800_update_brk_flags(c,pins);if(!c->brk_flags)c->IR--;_VMA();break;
+        case (0x3E<<4)|9: c->AD=_GBRK();_SA(c->AD++);break;
+        case (0x3E<<4)|10: c->PC=_GD()<<8;_SA(c->AD);if(c->brk_flags&MC6800_BRK_IRQ)_IF(true);c->brk_flags=0;break;
+        case (0x3E<<4)|11: c->PC|=_GD();_VMA();break;
+        case (0x3E<<4)|12: _FETCH();break;
         case (0x3E<<4)|13: assert(false);break;
         case (0x3E<<4)|14: assert(false);break;
         case (0x3E<<4)|15: assert(false);break;

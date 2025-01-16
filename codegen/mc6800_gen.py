@@ -48,7 +48,6 @@ M__W = 2        # write access
 M_RW = 3        # read-modify-write
 
 # addressing-modes and memory accesses for each instruction
-# TODO fix memory access modes (not implemented correctly yet)
 ops = [
     # aa = 00
     [
@@ -330,6 +329,26 @@ def i_bmi(o):
     o.t('if(c->P&MC6800_NF)c->PC+=(int8_t)_GD();')
 
 #-------------------------------------------------------------------------------
+def i_bge(o):
+    cmt(o,'BGE')
+    o.t('if(((c->P&MC6800_NF)&&(c->P&MC6800_VF))||(!(c->P&MC6800_NF)&&!(c->P&MC6800_VF)))c->PC+=(int8_t)_GD();')
+
+#-------------------------------------------------------------------------------
+def i_blt(o):
+    cmt(o,'BLT')
+    o.t('if(((c->P&MC6800_NF)&&!(c->P&MC6800_VF))||(!(c->P&MC6800_NF)&&(c->P&MC6800_VF)))c->PC+=(int8_t)_GD();')
+
+#-------------------------------------------------------------------------------
+def i_bgt(o):
+    cmt(o,'BGT')
+    o.t('if(!(c->P&MC6800_ZF)&&(((c->P&MC6800_NF)&&(c->P&MC6800_VF))||(!(c->P&MC6800_NF)&&!(c->P&MC6800_VF))))c->PC+=(int8_t)_GD();')
+
+#-------------------------------------------------------------------------------
+def i_ble(o):
+    cmt(o,'BLE')
+    o.t('if((c->P&MC6800_ZF)||(((c->P&MC6800_NF)&&!(c->P&MC6800_VF))||(!(c->P&MC6800_NF)&&(c->P&MC6800_VF))))c->PC+=(int8_t)_GD();')
+
+#-------------------------------------------------------------------------------
 def i_tsx(o):
     cmt(o,'TSX')
     o.t('c->IX=c->SP+1;')
@@ -426,6 +445,23 @@ def i_swi(o):
     o.ta('_IF(true);_VMA();')
     o.t('c->AD=_GBRK();_SA(c->AD++);')    # MC6800_RESET skips to here first
     o.t('c->PC=_GD()<<8;_SA(c->AD);c->brk_flags=0;')
+    o.t('c->PC|=_GD();')
+
+#-------------------------------------------------------------------------------
+def i_wai(o):
+    cmt(o,'WAI')
+    o.t('') # used by first o.ta of _i_swi_push
+    _i_swi_push(o,'c->PC')
+    _i_swi_push(o,'c->PC>>8')
+    _i_swi_push(o,'c->IX')
+    _i_swi_push(o,'c->IX>>8')
+    _i_swi_push(o,'c->A')
+    _i_swi_push(o,'c->B')
+    _i_swi_push(o,'c->P')
+    o.ta('_VMA();')
+    o.t('_mc6800_update_brk_flags(c,pins);if(!c->brk_flags)c->IR--;_VMA();') # loop until BRK
+    o.t('c->AD=_GBRK();_SA(c->AD++);')    # MC6800_RESET skips to here first
+    o.t('c->PC=_GD()<<8;_SA(c->AD);if(c->brk_flags&MC6800_BRK_IRQ)_IF(true);c->brk_flags=0;')
     o.t('c->PC|=_GD();')
 
 #-------------------------------------------------------------------------------
@@ -734,10 +770,10 @@ def enc_op(op):
             elif cccc == 9:      i_bvs(o)       # BVS
             elif cccc == 10:     i_bpl(o)       # BPL
             elif cccc == 11:     i_bmi(o)       # BMI
-            elif cccc == 12:     i_nop(o)       # BGE TODO
-            elif cccc == 13:     i_nop(o)       # BLT TODO
-            elif cccc == 14:     i_nop(o)       # BGT TODO
-            elif cccc == 15:     i_nop(o)       # BLE TODO
+            elif cccc == 12:     i_bge(o)       # BGE
+            elif cccc == 13:     i_blt(o)       # BLT
+            elif cccc == 14:     i_bgt(o)       # BGT
+            elif cccc == 15:     i_ble(o)       # BLE
         elif bb == 3:
             if cccc == 0:        i_tsx(o)       # TSX
             elif cccc == 1:      i_ins(o)       # INS
@@ -753,7 +789,7 @@ def enc_op(op):
             elif cccc == 11:     i_rti(o)       # RTI
             elif cccc == 12:     i_nop(o)
             elif cccc == 13:     i_nop(o)
-            elif cccc == 14:     i_nop(o)       # WAI TODO
+            elif cccc == 14:     i_wai(o)       # WAI
             elif cccc == 15:     i_swi(o)       # SWI
     elif aa == 1:
         if cccc == 0:        # NEG

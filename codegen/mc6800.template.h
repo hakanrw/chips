@@ -352,6 +352,21 @@ static inline void _mc6800_daa(mc6800_t* cpu) {
     puts("_mc6800_daa: not implemented");
 }
 
+static inline void _mc6800_update_brk_flags(mc6800_t* c, uint64_t pins) {
+    printf("irqpip: %d\n", c->irq_pip);
+    if ((c->irq_pip & 0x400) && !(c->P & MC6800_IF)) {
+        c->brk_flags |= MC6800_BRK_IRQ;
+    }
+    if (c->nmi_pip & 0xFC00) {
+        c->brk_flags |= MC6800_BRK_NMI;
+    }
+    if (pins & MC6800_RESET) {
+        c->brk_flags |= MC6800_BRK_RESET;
+    }
+    c->irq_pip &= 0x3FF;
+    c->nmi_pip &= 0x3FF;
+}
+
 #undef _MC6800_NZ
 
 uint64_t mc6800_init(mc6800_t* c) {
@@ -419,6 +434,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
             // TODO check
             c->nmi_pip |= 0x100;
         }
+
 	// IRQ test is level triggered
         if ((pins & MC6800_IRQ) && (0 == (c->P & MC6800_IF))) {
             // TODO interrupt handler
@@ -451,23 +467,16 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         //  - RES behaves slightly different than on a real 6502, we go
         //    into RES state as soon as the pin goes active, from there
         //    on, behaviour is 'standard'
-        if (c->irq_pip & 0x400) {
-            c->brk_flags |= MC6800_BRK_IRQ;
-        }
-        if (c->nmi_pip & 0xFC00) {
-            c->brk_flags |= MC6800_BRK_NMI;
-        }
-        if (pins & MC6800_RESET) {
-            c->brk_flags |= MC6800_BRK_RESET;
-        }
-        c->irq_pip &= 0x3FF;
-        c->nmi_pip &= 0x3FF;
+        _mc6800_update_brk_flags(c, pins);
 
         // if interrupt or reset was requested, force a BRK instruction
         if (c->brk_flags) {
             // start interrupt sequence
-            c->IR = (0x3F<<4)|8; // SWI
-            pins &= ~MC6800_RESET;
+            if (c->brk_flags & MC6800_BRK_RESET)
+                c->IR = (0x3F<<4)|8; // SWI + 8 (skip stack pushes)
+            else
+                c->IR = 0x3F<<4; // SWI
+            pins &= ~MC6800_RESET; // TODO: normally, reset should be cleared by user, not by us
         }
         else {
             c->PC++;
