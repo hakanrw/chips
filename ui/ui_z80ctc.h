@@ -8,11 +8,11 @@
     ~~~C
     #define CHIPS_UI_IMPL
     ~~~
-    before you include this file in *one* C++ file to create the 
+    before you include this file in *one* C++ file to create the
     implementation.
 
     Optionally provide the following macros with your own implementation
-    
+
     ~~~C
     CHIPS_ASSERT(c)
     ~~~
@@ -21,6 +21,7 @@
     Include the following headers before the including the *declaration*:
         - z80ctc.h
         - ui_chip.h
+        - ui_settings.h
 
     Include the following headers before including the *implementation*:
         - imgui.h
@@ -46,7 +47,7 @@
         2. Altered source versions must be plainly marked as such, and must not
         be misrepresented as being the original software.
         3. This notice may not be removed or altered from any source
-        distribution. 
+        distribution.
 #*/
 #include <stdint.h>
 #include <stdbool.h>
@@ -74,6 +75,7 @@ typedef struct {
     float init_x, init_y;
     float init_w, init_h;
     bool open;
+    bool last_open;
     bool valid;
     ui_chip_t chip;
 } ui_z80ctc_t;
@@ -81,6 +83,8 @@ typedef struct {
 void ui_z80ctc_init(ui_z80ctc_t* win, const ui_z80ctc_desc_t* desc);
 void ui_z80ctc_discard(ui_z80ctc_t* win);
 void ui_z80ctc_draw(ui_z80ctc_t* win);
+void ui_z80ctc_save_settings(ui_z80ctc_t* win, ui_settings_t* settings);
+void ui_z80ctc_load_settings(ui_z80ctc_t* win, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -108,7 +112,7 @@ void ui_z80ctc_init(ui_z80ctc_t* win, const ui_z80ctc_desc_t* desc) {
     win->init_y = (float) desc->y;
     win->init_w = (float) ((desc->w == 0) ? 460 : desc->w);
     win->init_h = (float) ((desc->h == 0) ? 300 : desc->h);
-    win->open = desc->open;
+    win->open = win->last_open = desc->open;
     win->valid = true;
     ui_chip_init(&win->chip, &desc->chip_desc);
 }
@@ -120,77 +124,74 @@ void ui_z80ctc_discard(ui_z80ctc_t* win) {
 
 static void _ui_z80ctc_channels(ui_z80ctc_t* win) {
     const z80ctc_t* ctc = win->ctc;
-
-    ImGui::Columns(5, "##ctc_columns", false);
-    ImGui::SetColumnWidth(0, 80);
-    ImGui::SetColumnWidth(1, 40);
-    ImGui::SetColumnWidth(2, 40);
-    ImGui::SetColumnWidth(3, 40);
-    ImGui::SetColumnWidth(4, 40);
-    ImGui::NextColumn();
-    ImGui::Text("Chn0"); ImGui::NextColumn();
-    ImGui::Text("Chn1"); ImGui::NextColumn();
-    ImGui::Text("Chn2"); ImGui::NextColumn();
-    ImGui::Text("Chn3"); ImGui::NextColumn();
-    ImGui::Separator();
-
-    ImGui::Text("Constant"); ImGui::NextColumn();
-    for (int i = 0; i < 4; i++) {
-        ImGui::Text("%02X", ctc->chn[i].constant); ImGui::NextColumn();
-    }
-    ImGui::Text("Counter"); ImGui::NextColumn();
-    for (int i = 0; i < 4; i++) {
-        ImGui::Text("%02X", ctc->chn[i].down_counter); ImGui::NextColumn();
-    }
-    ImGui::Text("INT Vec"); ImGui::NextColumn();
-    for (int i = 0; i < 4; i++) {
-        ImGui::Text("%02X", ctc->chn[i].int_vector); ImGui::NextColumn();
-    }
-    ImGui::Text("Control"); ImGui::NextColumn();
-    for (int i = 0; i < 4; i++) {
-        ImGui::Text("%02X", ctc->chn[i].control); ImGui::NextColumn();
-    }
-    ImGui::Text("       INT"); ImGui::NextColumn();
-    for (int i = 0; i < 4; i++) {
-        ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_EI) ? "EI":"DI"); ImGui::NextColumn();
-    }
-    ImGui::Text("      MODE"); ImGui::NextColumn();
-    for (int i = 0; i < 4; i++) {
-        ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_MODE) ? "CTR":"TMR"); ImGui::NextColumn();
-    }
-    ImGui::Text("  PRESCALE"); ImGui::NextColumn();
-    for (int i = 0; i < 4; i++) {
-        ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_PRESCALER) ? "256":"16"); ImGui::NextColumn();
-    }
-    ImGui::Text("      EDGE"); ImGui::NextColumn();
-    for (int i = 0; i < 4; i++) {
-        ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_EDGE) ? "RISE":"FALL"); ImGui::NextColumn();
-    }
-    ImGui::Text("   TRIGGER"); ImGui::NextColumn();
-    for (int i = 0; i < 4; i++) {
-        ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_TRIGGER) ? "PULS":"AUTO"); ImGui::NextColumn();
-    }
-    ImGui::Text("  CONSTANT"); ImGui::NextColumn();
-    for (int i = 0; i < 4; i++) {
-        ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_CONST_FOLLOWS) ? "FLWS":"NONE"); ImGui::NextColumn();
-    }
-    ImGui::Text("     RESET"); ImGui::NextColumn();
-    for (int i = 0; i < 4; i++) {
-        ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_RESET) ? "ON":"OFF"); ImGui::NextColumn();
-    }
-    ImGui::Text("   CONTROL"); ImGui::NextColumn();
-    for (int i = 0; i < 4; i++) {
-        ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_CONTROL) ? "WRD":"VEC"); ImGui::NextColumn();
+    if (ImGui::BeginTable("##ctc_columns", 5)) {
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 72);
+        ImGui::TableSetupColumn("Chn1", ImGuiTableColumnFlags_WidthFixed, 32);
+        ImGui::TableSetupColumn("Chn2", ImGuiTableColumnFlags_WidthFixed, 32);
+        ImGui::TableSetupColumn("Chn3", ImGuiTableColumnFlags_WidthFixed, 32);
+        ImGui::TableSetupColumn("Chn4", ImGuiTableColumnFlags_WidthFixed, 32);
+        ImGui::TableHeadersRow();
+        ImGui::TableNextColumn();
+        ImGui::Text("Constant"); ImGui::TableNextColumn();
+        for (int i = 0; i < 4; i++) {
+            ImGui::Text("%02X", ctc->chn[i].constant); ImGui::TableNextColumn();
+        }
+        ImGui::Text("Counter"); ImGui::TableNextColumn();
+        for (int i = 0; i < 4; i++) {
+            ImGui::Text("%02X", ctc->chn[i].down_counter); ImGui::TableNextColumn();
+        }
+        ImGui::Text("INT Vec"); ImGui::TableNextColumn();
+        for (int i = 0; i < 4; i++) {
+            ImGui::Text("%02X", ctc->chn[i].int_vector); ImGui::TableNextColumn();
+        }
+        ImGui::Text("Control"); ImGui::TableNextColumn();
+        for (int i = 0; i < 4; i++) {
+            ImGui::Text("%02X", ctc->chn[i].control); ImGui::TableNextColumn();
+        }
+        ImGui::Text("  INT"); ImGui::TableNextColumn();
+        for (int i = 0; i < 4; i++) {
+            ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_EI) ? "EI":"DI"); ImGui::TableNextColumn();
+        }
+        ImGui::Text("  MODE"); ImGui::TableNextColumn();
+        for (int i = 0; i < 4; i++) {
+            ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_MODE) ? "CTR":"TMR"); ImGui::TableNextColumn();
+        }
+        ImGui::Text("  PRESCALE"); ImGui::TableNextColumn();
+        for (int i = 0; i < 4; i++) {
+            ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_PRESCALER) ? "256":"16"); ImGui::TableNextColumn();
+        }
+        ImGui::Text("  EDGE"); ImGui::TableNextColumn();
+        for (int i = 0; i < 4; i++) {
+            ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_EDGE) ? "RISE":"FALL"); ImGui::TableNextColumn();
+        }
+        ImGui::Text("  TRIGGER"); ImGui::TableNextColumn();
+        for (int i = 0; i < 4; i++) {
+            ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_TRIGGER) ? "PULS":"AUTO"); ImGui::TableNextColumn();
+        }
+        ImGui::Text("  CONSTANT"); ImGui::TableNextColumn();
+        for (int i = 0; i < 4; i++) {
+            ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_CONST_FOLLOWS) ? "FLWS":"NONE"); ImGui::TableNextColumn();
+        }
+        ImGui::Text("  RESET"); ImGui::TableNextColumn();
+        for (int i = 0; i < 4; i++) {
+            ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_RESET) ? "ON":"OFF"); ImGui::TableNextColumn();
+        }
+        ImGui::Text("  CONTROL"); ImGui::TableNextColumn();
+        for (int i = 0; i < 4; i++) {
+            ImGui::Text("%s", (ctc->chn[i].control & Z80CTC_CTRL_CONTROL) ? "WRD":"VEC"); ImGui::TableNextColumn();
+        }
+        ImGui::EndTable();
     }
 }
 
 void ui_z80ctc_draw(ui_z80ctc_t* win) {
     CHIPS_ASSERT(win && win->valid && win->title && win->ctc);
+    ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
         return;
     }
-    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(win->title, &win->open)) {
         ImGui::BeginChild("##ctc_chip", ImVec2(176, 0), true);
         ui_chip_draw(&win->chip, win->ctc->pins);
@@ -203,4 +204,13 @@ void ui_z80ctc_draw(ui_z80ctc_t* win) {
     ImGui::End();
 }
 
+void ui_z80ctc_save_settings(ui_z80ctc_t* win, ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    ui_settings_add(settings, win->title, win->open);
+}
+
+void ui_z80ctc_load_settings(ui_z80ctc_t* win, const ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    win->open = ui_settings_isopen(settings, win->title);
+}
 #endif /* CHIPS_UI_IMPL */

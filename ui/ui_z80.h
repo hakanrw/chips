@@ -27,6 +27,7 @@
         - z80.h
         - ui_chip.h
         - ui_util.h
+        - ui_settings.h
 
     All strings provided to ui_z80_init() must remain alive until
     ui_z80_discard() is called!
@@ -74,6 +75,7 @@ typedef struct {
     float init_x, init_y;
     float init_w, init_h;
     bool open;
+    bool last_open;
     bool valid;
     ui_chip_t chip;
 } ui_z80_t;
@@ -81,6 +83,8 @@ typedef struct {
 void ui_z80_init(ui_z80_t* win, const ui_z80_desc_t* desc);
 void ui_z80_discard(ui_z80_t* win);
 void ui_z80_draw(ui_z80_t* win);
+void ui_z80_save_settings(ui_z80_t* win, ui_settings_t* settings);
+void ui_z80_load_settings(ui_z80_t* win, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -108,7 +112,7 @@ void ui_z80_init(ui_z80_t* win, const ui_z80_desc_t* desc) {
     win->init_y = (float) desc->y;
     win->init_w = (float) ((desc->w == 0) ? 360 : desc->w);
     win->init_h = (float) ((desc->h == 0) ? 340 : desc->h);
-    win->open = desc->open;
+    win->open = win->last_open = desc->open;
     win->valid = true;
     ui_chip_init(&win->chip, &desc->chip_desc);
 }
@@ -152,11 +156,12 @@ static void _ui_z80_regs(ui_z80_t* win) {
 
 void ui_z80_draw(ui_z80_t* win) {
     CHIPS_ASSERT(win && win->valid && win->title && win->cpu);
+    ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
         return;
     }
-    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(win->title, &win->open)) {
         ImGui::BeginChild("##z80_chip", ImVec2(176, 0), true);
         ui_chip_draw(&win->chip, win->cpu->pins);
@@ -167,5 +172,15 @@ void ui_z80_draw(ui_z80_t* win) {
         ImGui::EndChild();
     }
     ImGui::End();
+}
+
+void ui_z80_save_settings(ui_z80_t* win, ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    ui_settings_add(settings, win->title, win->open);
+}
+
+void ui_z80_load_settings(ui_z80_t* win, const ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    win->open = ui_settings_isopen(settings, win->title);
 }
 #endif /* CHIPS_UI_IMPL */

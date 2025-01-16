@@ -25,12 +25,14 @@
     - mem.h
     - ui_chip.h
     - ui_util.h
+    - ui_settings.h
     - ui_z80.h
     - ui_z80pio.h
     - ui_dbg.h
     - ui_dasm.h
     - ui_memedit.h
     - ui_memmap.h
+    - ui_display.h
     - ui_snapshot.h
 
     ## zlib/libpng license
@@ -74,6 +76,7 @@ typedef struct {
     ui_z1013_boot_t boot_cb;
     ui_z80_t cpu;
     ui_z80pio_t pio;
+    ui_display_t display;
     ui_memmap_t memmap;
     ui_memedit_t memedit[4];
     ui_dasm_t dasm[4];
@@ -81,10 +84,16 @@ typedef struct {
     ui_snapshot_t snapshot;
 } ui_z1013_t;
 
+typedef struct {
+    ui_display_frame_t display;
+} ui_z1013_frame_t;
+
 void ui_z1013_init(ui_z1013_t* ui, const ui_z1013_desc_t* desc);
 void ui_z1013_discard(ui_z1013_t* ui);
-void ui_z1013_draw(ui_z1013_t* ui);
+void ui_z1013_draw(ui_z1013_t* ui, const ui_z1013_frame_t* frame);
 chips_debug_t ui_z1013_get_debug(ui_z1013_t* ui);
+void ui_z1013_save_settings(ui_z1013_t* ui, ui_settings_t* settings);
+void ui_z1013_load_settings(ui_z1013_t* ui, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -130,16 +139,17 @@ static void _ui_z1013_draw_menu(ui_z1013_t* ui) {
         }
         if (ImGui::BeginMenu("Hardware")) {
             ImGui::MenuItem("Memory Map", 0, &ui->memmap.open);
+            ImGui::MenuItem("Display", 0, &ui->display.open);
             ImGui::MenuItem("Z80 CPU", 0, &ui->cpu.open);
             ImGui::MenuItem("Z80 PIO", 0, &ui->pio.open);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Debug")) {
             ImGui::MenuItem("CPU Debugger", 0, &ui->dbg.ui.open);
-            ImGui::MenuItem("Breakpoints", 0, &ui->dbg.ui.show_breakpoints);
-            ImGui::MenuItem("Stopwatch", 0, &ui->dbg.ui.show_stopwatch);
-            ImGui::MenuItem("Execution History", 0, &ui->dbg.ui.show_history);
-            ImGui::MenuItem("Memory Heatmap", 0, &ui->dbg.ui.show_heatmap);
+            ImGui::MenuItem("Breakpoints", 0, &ui->dbg.ui.breakpoints.open);
+            ImGui::MenuItem("Stopwatch", 0, &ui->dbg.ui.stopwatch.open);
+            ImGui::MenuItem("Execution History", 0, &ui->dbg.ui.history.open);
+            ImGui::MenuItem("Memory Heatmap", 0, &ui->dbg.ui.heatmap.open);
             if (ImGui::BeginMenu("Memory Editor")) {
                 ImGui::MenuItem("Window #1", 0, &ui->memedit[0].open);
                 ImGui::MenuItem("Window #2", 0, &ui->memedit[1].open);
@@ -310,6 +320,14 @@ void ui_z1013_init(ui_z1013_t* ui, const ui_z1013_desc_t* ui_desc) {
     }
     x += dx; y += dy;
     {
+        ui_display_desc_t desc = {0};
+        desc.title = "Display";
+        desc.x = x;
+        desc.y = y;
+        ui_display_init(&ui->display, &desc);
+    }
+    x += dx; y += dy;
+    {
         ui_memedit_desc_t desc = {0};
         desc.layers[0] = "System";
         desc.read_cb = _ui_z1013_mem_read;
@@ -351,6 +369,7 @@ void ui_z1013_discard(ui_z1013_t* ui) {
     ui->z1013 = 0;
     ui_z80_discard(&ui->cpu);
     ui_z80pio_discard(&ui->pio);
+    ui_display_discard(&ui->display);
     ui_memmap_discard(&ui->memmap);
     for (int i = 0; i < 4; i++) {
         ui_memedit_discard(&ui->memedit[i]);
@@ -359,14 +378,15 @@ void ui_z1013_discard(ui_z1013_t* ui) {
     ui_dbg_discard(&ui->dbg);
 }
 
-void ui_z1013_draw(ui_z1013_t* ui) {
-    CHIPS_ASSERT(ui && ui->z1013);
+void ui_z1013_draw(ui_z1013_t* ui, const ui_z1013_frame_t* frame) {
+    CHIPS_ASSERT(ui && ui->z1013 && frame);
     _ui_z1013_draw_menu(ui);
     if (ui->memmap.open) {
         _ui_z1013_update_memmap(ui);
     }
     ui_z80_draw(&ui->cpu);
     ui_z80pio_draw(&ui->pio);
+    ui_display_draw(&ui->display, &frame->display);
     ui_memmap_draw(&ui->memmap);
     for (int i = 0; i < 4; i++) {
         ui_memedit_draw(&ui->memedit[i]);
@@ -381,6 +401,36 @@ chips_debug_t ui_z1013_get_debug(ui_z1013_t* ui) {
     res.callback.user_data = &ui->dbg;
     res.stopped = &ui->dbg.dbg.stopped;
     return res;
+}
+
+void ui_z1013_save_settings(ui_z1013_t* ui, ui_settings_t* settings) {
+    CHIPS_ASSERT(ui && settings);
+    ui_z80_save_settings(&ui->cpu, settings);
+    ui_z80pio_save_settings(&ui->pio, settings);
+    ui_display_save_settings(&ui->display, settings);
+    ui_memmap_save_settings(&ui->memmap, settings);
+    for (int i = 0; i < 4; i++) {
+        ui_memedit_save_settings(&ui->memedit[i], settings);
+    }
+    for (int i = 0; i < 4; i++) {
+        ui_dasm_save_settings(&ui->dasm[i], settings);
+    }
+    ui_dbg_save_settings(&ui->dbg, settings);
+}
+
+void ui_z1013_load_settings(ui_z1013_t* ui, const ui_settings_t* settings) {
+    CHIPS_ASSERT(ui && settings);
+    ui_z80_load_settings(&ui->cpu, settings);
+    ui_z80pio_load_settings(&ui->pio, settings);
+    ui_display_load_settings(&ui->display, settings);
+    ui_memmap_load_settings(&ui->memmap, settings);
+    for (int i = 0; i < 4; i++) {
+        ui_memedit_load_settings(&ui->memedit[i], settings);
+    }
+    for (int i = 0; i < 4; i++) {
+        ui_dasm_load_settings(&ui->dasm[i], settings);
+    }
+    ui_dbg_load_settings(&ui->dbg, settings);
 }
 
 #ifdef __clang__

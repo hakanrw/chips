@@ -27,6 +27,7 @@
 
     Include the following headers before the including the *declaration*:
         - kc85.h
+        - ui_settings.h
 
     Include the following headers before including the *implementation*:
         - imgui.h
@@ -82,12 +83,15 @@ typedef struct {
     float init_x, init_y;
     float init_w, init_h;
     bool open;
+    bool last_open;
     bool valid;
 } ui_kc85sys_t;
 
 void ui_kc85sys_init(ui_kc85sys_t* win, const ui_kc85sys_desc_t* desc);
 void ui_kc85sys_discard(ui_kc85sys_t* win);
 void ui_kc85sys_draw(ui_kc85sys_t* win);
+void ui_kc85sys_save_settings(ui_kc85sys_t* win, ui_settings_t* settings);
+void ui_kc85sys_load_settings(ui_kc85sys_t* win, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -115,7 +119,7 @@ void ui_kc85sys_init(ui_kc85sys_t* win, const ui_kc85sys_desc_t* desc) {
     win->init_y = (float) desc->y;
     win->init_w = (float) ((desc->w == 0) ? 200 : desc->w);
     win->init_h = (float) ((desc->h == 0) ? 400 : desc->h);
-    win->open = desc->open;
+    win->open = win->last_open = desc->open;
     win->valid = true;
 }
 
@@ -126,11 +130,12 @@ void ui_kc85sys_discard(ui_kc85sys_t* win) {
 
 void ui_kc85sys_draw(ui_kc85sys_t* win) {
     CHIPS_ASSERT(win && win->valid && win->title && win->kc85);
+    ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
         return;
     }
-    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(win->title, &win->open)) {
         if (ImGui::CollapsingHeader("Port 88h (PIO A)", ImGuiTreeNodeFlags_DefaultOpen)) {
             const uint64_t v = win->kc85->pio_pins;
@@ -189,4 +194,15 @@ void ui_kc85sys_draw(ui_kc85sys_t* win) {
     }
     ImGui::End();
 }
+
+void ui_kc85sys_save_settings(ui_kc85sys_t* win, ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    ui_settings_add(settings, win->title, win->open);
+}
+
+void ui_kc85sys_load_settings(ui_kc85sys_t* win, const ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    win->open = ui_settings_isopen(settings, win->title);
+}
+
 #endif /* CHIPS_UI_IMPL */

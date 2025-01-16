@@ -8,11 +8,11 @@
     ~~~C
     #define CHIPS_UI_IMPL
     ~~~
-    before you include this file in *one* C++ file to create the 
+    before you include this file in *one* C++ file to create the
     implementation.
 
     Optionally provide the following macros with your own implementation
-    
+
     ~~~C
     CHIPS_ASSERT(c)
     ~~~
@@ -21,6 +21,7 @@
     Include the following headers before the including the *declaration*:
         - fdd.h
         - ui_chip.h
+        - ui_settings.h
 
     Include the following headers before including the *implementation*:
         - imgui.h
@@ -46,7 +47,7 @@
         2. Altered source versions must be plainly marked as such, and must not
         be misrepresented as being the original software.
         3. This notice may not be removed or altered from any source
-        distribution. 
+        distribution.
 #*/
 #include <stdint.h>
 #include <stdbool.h>
@@ -72,12 +73,15 @@ typedef struct ui_fdd_t {
     float init_x, init_y;
     float init_w, init_h;
     bool open;
+    bool last_open;
     bool valid;
 } ui_fdd_t;
 
 void ui_fdd_init(ui_fdd_t* win, ui_fdd_desc_t* desc);
 void ui_fdd_discard(ui_fdd_t* win);
 void ui_fdd_draw(ui_fdd_t* win);
+void ui_fdd_save_settings(ui_fdd_t* win, ui_settings_t* settings);
+void ui_fdd_load_settings(ui_fdd_t* win, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -106,7 +110,7 @@ void ui_fdd_init(ui_fdd_t* win, ui_fdd_desc_t* desc) {
     win->init_y = (float) desc->y;
     win->init_w = (float) ((desc->w == 0) ? 540 : desc->w);
     win->init_h = (float) ((desc->h == 0) ? 320 : desc->h);
-    win->open = desc->open;
+    win->open = win->last_open = desc->open;
     win->valid = true;
 }
 
@@ -117,11 +121,12 @@ void ui_fdd_discard(ui_fdd_t* win) {
 
 void ui_fdd_draw(ui_fdd_t* win) {
     CHIPS_ASSERT(win && win->valid && win->title);
+    ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
         return;
     }
-    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(win->title, &win->open)) {
         if (ImGui::CollapsingHeader("Drive Status", ImGuiTreeNodeFlags_DefaultOpen)) {
             fdd_t* fdd = win->fdd;
@@ -193,5 +198,15 @@ void ui_fdd_draw(ui_fdd_t* win) {
         }
     }
     ImGui::End();
+}
+
+void ui_fdd_save_settings(ui_fdd_t* win, ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    ui_settings_add(settings, win->title, win->open);
+}
+
+void ui_fdd_load_settings(ui_fdd_t* win, const ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    win->open = ui_settings_isopen(settings, win->title);
 }
 #endif /* CHIPS_UI_IMPL */

@@ -8,11 +8,11 @@
     ~~~C
     #define CHIPS_UI_IMPL
     ~~~
-    before you include this file in *one* C++ file to create the 
+    before you include this file in *one* C++ file to create the
     implementation.
 
     Optionally provide the following macros with your own implementation
-    
+
     ~~~C
     CHIPS_ASSERT(c)
     ~~~
@@ -21,6 +21,7 @@
     Include the following headers before the including the *declaration*:
         - mc6845.h
         - ui_chip.h
+        - ui_settings.h
 
     Include the following headers before including the *implementation*:
         - imgui.h
@@ -47,7 +48,7 @@
         2. Altered source versions must be plainly marked as such, and must not
         be misrepresented as being the original software.
         3. This notice may not be removed or altered from any source
-        distribution. 
+        distribution.
 #*/
 #include <stdint.h>
 #include <stdbool.h>
@@ -74,6 +75,7 @@ typedef struct {
     float init_x, init_y;
     float init_w, init_h;
     bool open;
+    bool last_open;
     bool valid;
     ui_chip_t chip;
 } ui_mc6845_t;
@@ -81,6 +83,8 @@ typedef struct {
 void ui_mc6845_init(ui_mc6845_t* win, const ui_mc6845_desc_t* desc);
 void ui_mc6845_discard(ui_mc6845_t* win);
 void ui_mc6845_draw(ui_mc6845_t* win);
+void ui_mc6845_save_settings(ui_mc6845_t* win, ui_settings_t* settings);
+void ui_mc6845_load_settings(ui_mc6845_t* win, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -108,7 +112,7 @@ void ui_mc6845_init(ui_mc6845_t* win, const ui_mc6845_desc_t* desc) {
     win->init_y = (float) desc->y;
     win->init_w = (float) ((desc->w == 0) ? 460 : desc->w);
     win->init_h = (float) ((desc->h == 0) ? 370 : desc->h);
-    win->open = desc->open;
+    win->open = win->last_open = desc->open;
     win->valid = true;
     ui_chip_init(&win->chip, &desc->chip_desc);
 }
@@ -128,30 +132,31 @@ static void _ui_mc6845_draw_state(ui_mc6845_t* win) {
         case MC6845_TYPE_MC6845:    ImGui::Text("Type: MC6845"); break;
         default:                    ImGui::Text("Type: ???"); break;
     }
-    ImGui::Separator();
 
-    ImGui::Columns(2, "##regs", false);
-    ImGui::SetColumnWidth(0, 124);
-    ImGui::SetColumnWidth(1, 124);
-    mc->h_total = ui_util_input_u8("R0 HTotal", mc->h_total); ImGui::NextColumn();
-    mc->h_displayed = ui_util_input_u8("R1 HDisp", mc->h_displayed); ImGui::NextColumn();
-    mc->h_sync_pos = ui_util_input_u8("R2 HSyncPos", mc->h_sync_pos); ImGui::NextColumn();
-    mc->sync_widths = ui_util_input_u8("R3 SyncWidth", mc->sync_widths); ImGui::NextColumn();
-    mc->v_total = ui_util_input_u8("R4 VTotal", mc->v_total); ImGui::NextColumn();
-    mc->v_total_adjust = ui_util_input_u8("R5 VTotalAdj", mc->v_total_adjust); ImGui::NextColumn();
-    mc->v_displayed = ui_util_input_u8("R6 VDisp", mc->v_displayed); ImGui::NextColumn();
-    mc->v_sync_pos = ui_util_input_u8("R7 VSyncPos", mc->v_sync_pos); ImGui::NextColumn();
-    mc->interlace_mode = ui_util_input_u8("R8 Interl", mc->interlace_mode); ImGui::NextColumn();
-    mc->max_scanline_addr = ui_util_input_u8("R9 MaxScanl", mc->max_scanline_addr); ImGui::NextColumn();
-    mc->cursor_start = ui_util_input_u8("R10 CursStart", mc->cursor_start); ImGui::NextColumn();
-    mc->cursor_end = ui_util_input_u8("R11 CursEnd", mc->cursor_end); ImGui::NextColumn();
-    mc->start_addr_hi = ui_util_input_u8("R12 AddrHi", mc->start_addr_hi); ImGui::NextColumn();
-    mc->start_addr_lo = ui_util_input_u8("R13 AddrLo", mc->start_addr_lo); ImGui::NextColumn();
-    mc->cursor_hi = ui_util_input_u8("R14 CursHi", mc->cursor_hi); ImGui::NextColumn();
-    mc->cursor_lo = ui_util_input_u8("R15 CursLo", mc->cursor_lo); ImGui::NextColumn();
-    mc->lightpen_hi = ui_util_input_u8("R16 LPenHi", mc->lightpen_hi); ImGui::NextColumn();
-    mc->lightpen_lo = ui_util_input_u8("R17 LPenLo", mc->lightpen_lo); ImGui::NextColumn();
-    ImGui::Columns();
+    if (ImGui::BeginTable("##regs", 2)) {
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 124);
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 124);
+        ImGui::TableNextColumn();
+        mc->h_total = ui_util_input_u8("R0 HTotal", mc->h_total); ImGui::TableNextColumn();
+        mc->h_displayed = ui_util_input_u8("R1 HDisp", mc->h_displayed); ImGui::TableNextColumn();
+        mc->h_sync_pos = ui_util_input_u8("R2 HSyncPos", mc->h_sync_pos); ImGui::TableNextColumn();
+        mc->sync_widths = ui_util_input_u8("R3 SyncWidth", mc->sync_widths); ImGui::TableNextColumn();
+        mc->v_total = ui_util_input_u8("R4 VTotal", mc->v_total); ImGui::TableNextColumn();
+        mc->v_total_adjust = ui_util_input_u8("R5 VTotalAdj", mc->v_total_adjust); ImGui::TableNextColumn();
+        mc->v_displayed = ui_util_input_u8("R6 VDisp", mc->v_displayed); ImGui::TableNextColumn();
+        mc->v_sync_pos = ui_util_input_u8("R7 VSyncPos", mc->v_sync_pos); ImGui::TableNextColumn();
+        mc->interlace_mode = ui_util_input_u8("R8 Interl", mc->interlace_mode); ImGui::TableNextColumn();
+        mc->max_scanline_addr = ui_util_input_u8("R9 MaxScanl", mc->max_scanline_addr); ImGui::TableNextColumn();
+        mc->cursor_start = ui_util_input_u8("R10 CursStart", mc->cursor_start); ImGui::TableNextColumn();
+        mc->cursor_end = ui_util_input_u8("R11 CursEnd", mc->cursor_end); ImGui::TableNextColumn();
+        mc->start_addr_hi = ui_util_input_u8("R12 AddrHi", mc->start_addr_hi); ImGui::TableNextColumn();
+        mc->start_addr_lo = ui_util_input_u8("R13 AddrLo", mc->start_addr_lo); ImGui::TableNextColumn();
+        mc->cursor_hi = ui_util_input_u8("R14 CursHi", mc->cursor_hi); ImGui::TableNextColumn();
+        mc->cursor_lo = ui_util_input_u8("R15 CursLo", mc->cursor_lo); ImGui::TableNextColumn();
+        mc->lightpen_hi = ui_util_input_u8("R16 LPenHi", mc->lightpen_hi); ImGui::TableNextColumn();
+        mc->lightpen_lo = ui_util_input_u8("R17 LPenLo", mc->lightpen_lo); ImGui::TableNextColumn();
+        ImGui::EndTable();
+    }
     ImGui::Separator();
     ImGui::Text("Memory Addr: %04X  Row Start: %04X", mc->ma, mc->ma_row_start);
     ImGui::Text("Row Ctr:     %02X    Scanline Ctr: %02X", mc->v_ctr, mc->r_ctr);
@@ -162,11 +167,12 @@ static void _ui_mc6845_draw_state(ui_mc6845_t* win) {
 
 void ui_mc6845_draw(ui_mc6845_t* win) {
     CHIPS_ASSERT(win && win->valid && win->title && win->mc6845);
+    ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
         return;
     }
-    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(win->title, &win->open)) {
         ImGui::BeginChild("##chip", ImVec2(176, 0), true);
         ui_chip_draw(&win->chip, win->mc6845->pins);
@@ -179,4 +185,13 @@ void ui_mc6845_draw(ui_mc6845_t* win) {
     ImGui::End();
 }
 
+void ui_mc6845_save_settings(ui_mc6845_t* win, ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    ui_settings_add(settings, win->title, win->open);
+}
+
+void ui_mc6845_load_settings(ui_mc6845_t* win, const ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    win->open = ui_settings_isopen(settings, win->title);
+}
 #endif /* CHIPS_UI_IMPL */

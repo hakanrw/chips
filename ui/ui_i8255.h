@@ -1,3 +1,4 @@
+#pragma once
 /*#
     # ui_i81255.h
 
@@ -7,11 +8,11 @@
     ~~~C
     #define CHIPS_UI_IMPL
     ~~~
-    before you include this file in *one* C++ file to create the 
+    before you include this file in *one* C++ file to create the
     implementation.
 
     Optionally provide the following macros with your own implementation
-    
+
     ~~~C
     CHIPS_ASSERT(c)
     ~~~
@@ -26,6 +27,7 @@
         - i8255.h
         - ui_chip.h
         - ui_util.h
+        - ui_settings.h
 
     All string data provided to the ui_i8255_init() must remain alive until
     until ui_i8255_discard() is called!
@@ -46,7 +48,7 @@
         2. Altered source versions must be plainly marked as such, and must not
         be misrepresented as being the original software.
         3. This notice may not be removed or altered from any source
-        distribution. 
+        distribution.
 #*/
 #include <stdint.h>
 #include <stdbool.h>
@@ -73,6 +75,7 @@ typedef struct {
     float init_x, init_y;
     float init_w, init_h;
     bool open;
+    bool last_open;
     bool valid;
     ui_chip_t chip;
 } ui_i8255_t;
@@ -80,6 +83,8 @@ typedef struct {
 void ui_i8255_init(ui_i8255_t* win, const ui_i8255_desc_t* desc);
 void ui_i8255_discard(ui_i8255_t* win);
 void ui_i8255_draw(ui_i8255_t* win);
+void ui_i8255_save_settings(ui_i8255_t* win, ui_settings_t* settings);
+void ui_i8255_load_settings(ui_i8255_t* win, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -107,7 +112,7 @@ void ui_i8255_init(ui_i8255_t* win, const ui_i8255_desc_t* desc) {
     win->init_y = (float) desc->y;
     win->init_w = (float) ((desc->w == 0) ? 440 : desc->w);
     win->init_h = (float) ((desc->h == 0) ? 370 : desc->h);
-    win->open = desc->open;
+    win->open = win->last_open = desc->open;
     win->valid = true;
     ui_chip_init(&win->chip, &desc->chip_desc);
 }
@@ -119,44 +124,43 @@ void ui_i8255_discard(ui_i8255_t* win) {
 
 static void _ui_i8255_draw_state(ui_i8255_t* win) {
     i8255_t* ppi = win->i8255;
-    ImGui::Columns(5, "##ppi_ports", false);
-    ImGui::SetColumnWidth(0, 64);
-    ImGui::SetColumnWidth(1, 32);
-    ImGui::SetColumnWidth(2, 32);
-    ImGui::SetColumnWidth(3, 32);
-    ImGui::SetColumnWidth(4, 32);
-    ImGui::NextColumn();
-    ImGui::Text("A"); ImGui::NextColumn();
-    ImGui::Text("B"); ImGui::NextColumn();
-    ImGui::Text("CHI"); ImGui::NextColumn();
-    ImGui::Text("CLO"); ImGui::NextColumn();
+    if (ImGui::BeginTable("##ppi_ports", 5)) {
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 56);
+        ImGui::TableSetupColumn("A", ImGuiTableColumnFlags_WidthFixed, 32);
+        ImGui::TableSetupColumn("B", ImGuiTableColumnFlags_WidthFixed, 32);
+        ImGui::TableSetupColumn("CHI", ImGuiTableColumnFlags_WidthFixed, 32);
+        ImGui::TableSetupColumn("CLO", ImGuiTableColumnFlags_WidthFixed, 32);
+        ImGui::TableHeadersRow();
+        ImGui::TableNextColumn();
+        ImGui::Text("Mode"); ImGui::TableNextColumn();
+        ImGui::Text("%d", (ppi->control & I8255_CTRL_ACHI_MODE) >> 5); ImGui::TableNextColumn();
+        ImGui::Text("%d", (ppi->control & I8255_CTRL_BCLO_MODE) >> 2); ImGui::TableNextColumn();
+        ImGui::Text("%d", (ppi->control & I8255_CTRL_ACHI_MODE) >> 5); ImGui::TableNextColumn();
+        ImGui::Text("%d", (ppi->control & I8255_CTRL_BCLO_MODE) >> 2); ImGui::TableNextColumn();
+        ImGui::Text("In/Out"); ImGui::TableNextColumn();
+        ImGui::Text("%s", ((ppi->control & I8255_CTRL_A) == I8255_CTRL_A_INPUT) ? "IN":"OUT"); ImGui::TableNextColumn();
+        ImGui::Text("%s", ((ppi->control & I8255_CTRL_B) == I8255_CTRL_B_INPUT) ? "IN":"OUT"); ImGui::TableNextColumn();
+        ImGui::Text("%s", ((ppi->control & I8255_CTRL_CHI) == I8255_CTRL_CHI_INPUT) ? "IN":"OUT"); ImGui::TableNextColumn();
+        ImGui::Text("%s", ((ppi->control & I8255_CTRL_CLO) == I8255_CTRL_CLO_INPUT) ? "IN":"OUT"); ImGui::TableNextColumn();
+        ImGui::Text("Output"); ImGui::TableNextColumn();
+        ImGui::Text("%02X", ppi->pa.outp); ImGui::TableNextColumn();
+        ImGui::Text("%02X", ppi->pb.outp); ImGui::TableNextColumn();
+        ImGui::Text("%X", ppi->pc.outp >> 4); ImGui::TableNextColumn();
+        ImGui::Text("%X", ppi->pc.outp & 0xF); ImGui::TableNextColumn();
+        ImGui::EndTable();
+    }
     ImGui::Separator();
-    ImGui::Text("Mode"); ImGui::NextColumn();
-    ImGui::Text("%d", (ppi->control & I8255_CTRL_ACHI_MODE) >> 5); ImGui::NextColumn();
-    ImGui::Text("%d", (ppi->control & I8255_CTRL_BCLO_MODE) >> 2); ImGui::NextColumn();
-    ImGui::Text("%d", (ppi->control & I8255_CTRL_ACHI_MODE) >> 5); ImGui::NextColumn();
-    ImGui::Text("%d", (ppi->control & I8255_CTRL_BCLO_MODE) >> 2); ImGui::NextColumn();
-    ImGui::Text("In/Out"); ImGui::NextColumn();
-    ImGui::Text("%s", ((ppi->control & I8255_CTRL_A) == I8255_CTRL_A_INPUT) ? "IN":"OUT"); ImGui::NextColumn();
-    ImGui::Text("%s", ((ppi->control & I8255_CTRL_B) == I8255_CTRL_B_INPUT) ? "IN":"OUT"); ImGui::NextColumn();
-    ImGui::Text("%s", ((ppi->control & I8255_CTRL_CHI) == I8255_CTRL_CHI_INPUT) ? "IN":"OUT"); ImGui::NextColumn();
-    ImGui::Text("%s", ((ppi->control & I8255_CTRL_CLO) == I8255_CTRL_CLO_INPUT) ? "IN":"OUT"); ImGui::NextColumn();
-    ImGui::Text("Output"); ImGui::NextColumn();
-    ImGui::Text("%02X", ppi->pa.outp); ImGui::NextColumn();
-    ImGui::Text("%02X", ppi->pb.outp); ImGui::NextColumn();
-    ImGui::Text("%X", ppi->pc.outp >> 4); ImGui::NextColumn();
-    ImGui::Text("%X", ppi->pc.outp & 0xF); ImGui::NextColumn();
-    ImGui::Columns(); ImGui::Separator();
     ImGui::Text("Control: %02X", ppi->control);
 }
 
 void ui_i8255_draw(ui_i8255_t* win) {
     CHIPS_ASSERT(win && win->valid && win->title && win->i8255);
+    ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
         return;
     }
-    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(win->title, &win->open)) {
         ImGui::BeginChild("##i8255_chip", ImVec2(176, 0), true);
         ui_chip_draw(&win->chip, win->i8255->pins);
@@ -168,4 +172,15 @@ void ui_i8255_draw(ui_i8255_t* win) {
     }
     ImGui::End();
 }
+
+void ui_i8255_save_settings(ui_i8255_t* win, ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    ui_settings_add(settings, win->title, win->open);
+}
+
+void ui_i8255_load_settings(ui_i8255_t* win, const ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    win->open = ui_settings_isopen(settings, win->title);
+}
+
 #endif

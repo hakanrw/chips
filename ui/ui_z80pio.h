@@ -8,11 +8,11 @@
     ~~~C
     #define CHIPS_UI_IMPL
     ~~~
-    before you include this file in *one* C++ file to create the 
+    before you include this file in *one* C++ file to create the
     implementation.
 
     Optionally provide the following macros with your own implementation
-    
+
     ~~~C
     CHIPS_ASSERT(c)
     ~~~
@@ -21,6 +21,7 @@
     Include the following headers before the including the *declaration*:
         - z80pio.h
         - ui_chip.h
+        - ui_settings.h
 
     Include the following headers before including the *implementation*:
         - imgui.h
@@ -46,7 +47,7 @@
         2. Altered source versions must be plainly marked as such, and must not
         be misrepresented as being the original software.
         3. This notice may not be removed or altered from any source
-        distribution. 
+        distribution.
 #*/
 #include <stdint.h>
 #include <stdbool.h>
@@ -74,6 +75,7 @@ typedef struct {
     float init_x, init_y;
     float init_w, init_h;
     bool open;
+    bool last_open;
     bool valid;
     ui_chip_t chip;
 } ui_z80pio_t;
@@ -81,6 +83,12 @@ typedef struct {
 void ui_z80pio_init(ui_z80pio_t* win, const ui_z80pio_desc_t* desc);
 void ui_z80pio_discard(ui_z80pio_t* win);
 void ui_z80pio_draw(ui_z80pio_t* win);
+void ui_z80pio_save_settings(ui_z80pio_t* win, ui_settings_t* settings);
+void ui_z80pio_load_settings(ui_z80pio_t* win, const ui_settings_t* settings);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 /*-- IMPLEMENTATION (include in C++ source) ----------------------------------*/
 #ifdef CHIPS_UI_IMPL
@@ -104,7 +112,7 @@ void ui_z80pio_init(ui_z80pio_t* win, const ui_z80pio_desc_t* desc) {
     win->init_y = (float) desc->y;
     win->init_w = (float) ((desc->w == 0) ? 360 : desc->w);
     win->init_h = (float) ((desc->h == 0) ? 364 : desc->h);
-    win->open = desc->open;
+    win->open = win->last_open = desc->open;
     win->valid = true;
     ui_chip_init(&win->chip, &desc->chip_desc);
 }
@@ -126,65 +134,64 @@ static const char* _ui_z80pio_mode_str(uint8_t mode) {
 
 static void _ui_z80pio_ports(ui_z80pio_t* win) {
     const z80pio_t* pio = win->pio;
-
-    ImGui::Columns(3, "##pio_columns", false);
-    ImGui::SetColumnWidth(0, 80);
-    ImGui::SetColumnWidth(1, 40);
-    ImGui::SetColumnWidth(2, 40);
-    ImGui::NextColumn();
-    ImGui::Text("PA"); ImGui::NextColumn();
-    ImGui::Text("PB"); ImGui::NextColumn();
-    ImGui::Separator();
-
-    ImGui::Text("Mode"); ImGui::NextColumn();
-    for (int i = 0; i < 2; i++) {
-        ImGui::Text("%s", _ui_z80pio_mode_str(pio->port[i].mode)); ImGui::NextColumn();
-    }
-    ImGui::Text("Output"); ImGui::NextColumn();
-    for (int i = 0; i < 2; i++) {
-        ImGui::Text("%02X", pio->port[i].output); ImGui::NextColumn();
-    }
-    ImGui::Text("Input"); ImGui::NextColumn();
-    for (int i = 0; i < 2; i++) {
-        ImGui::Text("%02X", pio->port[i].input); ImGui::NextColumn();
-    }
-    ImGui::Text("IO Select"); ImGui::NextColumn();
-    for (int i = 0; i < 2; i++) {
-        ImGui::Text("%02X", pio->port[i].io_select); ImGui::NextColumn();
-    }
-    ImGui::Text("INT Ctrl"); ImGui::NextColumn();
-    for (int i = 0; i < 2; i++) {
-        ImGui::Text("%02X", pio->port[i].int_control); ImGui::NextColumn();
-    }
-    ImGui::Text("  ei/di"); ImGui::NextColumn();
-    for (int i = 0; i < 2; i++) {
-        ImGui::Text("%s", pio->port[i].int_control & Z80PIO_INTCTRL_EI ? "EI":"DI"); ImGui::NextColumn();
-    }
-    ImGui::Text("  and/or"); ImGui::NextColumn();
-    for (int i = 0; i < 2; i++) {
-        ImGui::Text("%s", pio->port[i].int_control & Z80PIO_INTCTRL_ANDOR ? "AND":"OR"); ImGui::NextColumn();
-    }
-    ImGui::Text("  hi/lo"); ImGui::NextColumn();
-    for (int i = 0; i < 2; i++) {
-        ImGui::Text("%s", pio->port[i].int_control & Z80PIO_INTCTRL_HILO ? "HI":"LO"); ImGui::NextColumn();
-    }
-    ImGui::Text("INT Vec"); ImGui::NextColumn();
-    for (int i = 0; i < 2; i++) {
-        ImGui::Text("%02X", pio->port[i].int_vector); ImGui::NextColumn();
-    }
-    ImGui::Text("INT Mask"); ImGui::NextColumn();
-    for (int i = 0; i < 2; i++) {
-        ImGui::Text("%02X", pio->port[i].int_mask); ImGui::NextColumn();
+    if (ImGui::BeginTable("##pio_columns", 3)) {
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 64);
+        ImGui::TableSetupColumn("PA", ImGuiTableColumnFlags_WidthFixed, 32);
+        ImGui::TableSetupColumn("PB", ImGuiTableColumnFlags_WidthFixed, 32);
+        ImGui::TableHeadersRow();
+        ImGui::TableNextColumn();
+        ImGui::Text("Mode"); ImGui::TableNextColumn();
+        for (int i = 0; i < 2; i++) {
+            ImGui::Text("%s", _ui_z80pio_mode_str(pio->port[i].mode)); ImGui::TableNextColumn();
+        }
+        ImGui::Text("Output"); ImGui::TableNextColumn();
+        for (int i = 0; i < 2; i++) {
+            ImGui::Text("%02X", pio->port[i].output); ImGui::TableNextColumn();
+        }
+        ImGui::Text("Input"); ImGui::TableNextColumn();
+        for (int i = 0; i < 2; i++) {
+            ImGui::Text("%02X", pio->port[i].input); ImGui::TableNextColumn();
+        }
+        ImGui::Text("IO Select"); ImGui::TableNextColumn();
+        for (int i = 0; i < 2; i++) {
+            ImGui::Text("%02X", pio->port[i].io_select); ImGui::TableNextColumn();
+        }
+        ImGui::Text("INT Ctrl"); ImGui::TableNextColumn();
+        for (int i = 0; i < 2; i++) {
+            ImGui::Text("%02X", pio->port[i].int_control); ImGui::TableNextColumn();
+        }
+        ImGui::Text("  ei/di"); ImGui::TableNextColumn();
+        for (int i = 0; i < 2; i++) {
+            ImGui::Text("%s", pio->port[i].int_control & Z80PIO_INTCTRL_EI ? "EI":"DI"); ImGui::TableNextColumn();
+        }
+        ImGui::Text("  and/or"); ImGui::TableNextColumn();
+        for (int i = 0; i < 2; i++) {
+            ImGui::Text("%s", pio->port[i].int_control & Z80PIO_INTCTRL_ANDOR ? "AND":"OR"); ImGui::TableNextColumn();
+        }
+        ImGui::Text("  hi/lo"); ImGui::TableNextColumn();
+        for (int i = 0; i < 2; i++) {
+            ImGui::Text("%s", pio->port[i].int_control & Z80PIO_INTCTRL_HILO ? "HI":"LO"); ImGui::TableNextColumn();
+        }
+        ImGui::Text("INT Vec"); ImGui::TableNextColumn();
+        for (int i = 0; i < 2; i++) {
+            ImGui::Text("%02X", pio->port[i].int_vector); ImGui::TableNextColumn();
+        }
+        ImGui::Text("INT Mask"); ImGui::TableNextColumn();
+        for (int i = 0; i < 2; i++) {
+            ImGui::Text("%02X", pio->port[i].int_mask); ImGui::TableNextColumn();
+        }
+        ImGui::EndTable();
     }
 }
 
 void ui_z80pio_draw(ui_z80pio_t* win) {
     CHIPS_ASSERT(win && win->valid && win->title && win->pio);
+    ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
         return;
     }
-    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(win->title, &win->open)) {
         ImGui::BeginChild("##pio_chip", ImVec2(176, 0), true);
         ui_chip_draw(&win->chip, win->pio->pins);
@@ -197,6 +204,13 @@ void ui_z80pio_draw(ui_z80pio_t* win) {
     ImGui::End();
 }
 
-} /* extern "C" */
-#endif
+void ui_z80pio_save_settings(ui_z80pio_t* win, ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    ui_settings_add(settings, win->title, win->open);
+}
 
+void ui_z80pio_load_settings(ui_z80pio_t* win, const ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    win->open = ui_settings_isopen(settings, win->title);
+}
+#endif // CHIPS_UI_IMPL

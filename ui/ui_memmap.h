@@ -8,11 +8,11 @@
     ~~~C
     #define CHIPS_UI_IMPL
     ~~~
-    before you include this file in *one* C++ file to create the 
+    before you include this file in *one* C++ file to create the
     implementation.
 
     Optionally provide the following macros with your own implementation
-    
+
     ~~~C
     CHIPS_ASSERT(c)
     ~~~
@@ -23,6 +23,7 @@
 
         - imgui.h
         - ui_util.h
+        - ui_settings.h
 
     All strings provided to ui_memmap_init() must remain alive until
     ui_memmap_discard() is called!
@@ -43,7 +44,7 @@
         2. Altered source versions must be plainly marked as such, and must not
         be misrepresented as being the original software.
         3. This notice may not be removed or altered from any source
-        distribution. 
+        distribution.
 #*/
 #include <stdint.h>
 #include <stdbool.h>
@@ -86,6 +87,7 @@ typedef struct {
     float layer_height;
     float left_padding;
     bool open;
+    bool last_open;
     bool valid;
     int num_layers;
     ui_memmap_layer_t layers[UI_MEMMAP_MAX_LAYERS];
@@ -94,6 +96,8 @@ typedef struct {
 void ui_memmap_init(ui_memmap_t* win, const ui_memmap_desc_t* desc);
 void ui_memmap_discard(ui_memmap_t* win);
 void ui_memmap_draw(ui_memmap_t* win);
+void ui_memmap_save_settings(ui_memmap_t* win, ui_settings_t* settings);
+void ui_memmap_load_settings(ui_memmap_t* ui, const ui_settings_t* settings);
 
 /* reset/clear memory map description */
 void ui_memmap_reset(ui_memmap_t* win);
@@ -193,7 +197,7 @@ void ui_memmap_init(ui_memmap_t* win, const ui_memmap_desc_t* desc) {
     win->init_y = (float) desc->y;
     win->init_w = (float) ((desc->w == 0) ? 400 : desc->w);
     win->init_h = (float) ((desc->h == 0) ? 40 : desc->h);
-    win->open = desc->open;
+    win->open = win->last_open = desc->open;
     win->left_padding = 80.0f;;
     win->layer_height = 20.0f;
     win->valid = true;
@@ -206,12 +210,13 @@ void ui_memmap_discard(ui_memmap_t* win) {
 
 void ui_memmap_draw(ui_memmap_t* win) {
     CHIPS_ASSERT(win && win->valid && win->title);
+    ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
         return;
     }
     const float min_height = 40.0f + ((win->num_layers + 1.0f) * win->layer_height);
-    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSizeConstraints(ImVec2(120.0f, min_height), ImVec2(FLT_MAX,FLT_MAX));
     if (ImGui::Begin(win->title, &win->open)) {
         const ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
@@ -249,4 +254,13 @@ void ui_memmap_region(ui_memmap_t* win, const char* name, uint16_t addr, int len
     reg.on = on;
 }
 
+void ui_memmap_save_settings(ui_memmap_t* win, ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    ui_settings_add(settings, win->title, win->open);
+}
+
+void ui_memmap_load_settings(ui_memmap_t* win, const ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    win->open = ui_settings_isopen(settings, win->title);
+}
 #endif /* CHIPS_UI_IMPL */

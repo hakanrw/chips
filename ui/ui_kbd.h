@@ -8,11 +8,11 @@
     ~~~C
     #define CHIPS_UI_IMPL
     ~~~
-    before you include this file in *one* C++ file to create the 
+    before you include this file in *one* C++ file to create the
     implementation.
 
     Optionally provide the following macros with your own implementation
-    
+
     ~~~C
     CHIPS_ASSERT(c)
     ~~~
@@ -24,6 +24,7 @@
     Include the following headers before including the *implementation*:
         - imgui.h
         - kbd.h
+        - ui_settings.h
 
     All string data provided to the ui_kbd_init() must remain alive until
     until ui_kbd_discard() is called!
@@ -44,7 +45,7 @@
         2. Altered source versions must be plainly marked as such, and must not
         be misrepresented as being the original software.
         3. This notice may not be removed or altered from any source
-        distribution. 
+        distribution.
 #*/
 #include <stdint.h>
 #include <stdbool.h>
@@ -79,6 +80,7 @@ typedef struct {
     uint32_t last_key_mask;
     int last_key_frame_count;
     bool open;
+    bool last_open;
     bool valid;
     int keymap[UI_KBD_MAX_LAYERS][KBD_MAX_COLUMNS][KBD_MAX_LINES];
 } ui_kbd_t;
@@ -86,6 +88,8 @@ typedef struct {
 void ui_kbd_init(ui_kbd_t* win, const ui_kbd_desc_t* desc);
 void ui_kbd_discard(ui_kbd_t* win);
 void ui_kbd_draw(ui_kbd_t* win);
+void ui_kbd_save_settings(ui_kbd_t* win, ui_settings_t* settings);
+void ui_kbd_load_settings(ui_kbd_t* ui, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -157,7 +161,7 @@ void ui_kbd_init(ui_kbd_t* win, const ui_kbd_desc_t* desc) {
     win->top_padding = 20.0f;
     win->cell_width = 32.0f;
     win->cell_height = 32.0f;
-    win->open = desc->open;
+    win->open = win->last_open = desc->open;
 
     /* get matrix size */
     uint32_t key_bits = 0;
@@ -268,13 +272,14 @@ static void _ui_kbd_draw_matrix(ui_kbd_t* win, const ImVec2& canvas_pos, uint32_
 
 void ui_kbd_draw(ui_kbd_t* win) {
     CHIPS_ASSERT(win && win->valid && win->title && win->kbd);
+    ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
         return;
     }
-    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_FirstUseEver);
     const float min_w = win->num_columns * win->cell_width + win->left_padding + 40.0f;
     const float min_h = win->num_lines * win->cell_height + win->top_padding + 64.0f;
-    ImGui::SetNextWindowSize(ImVec2(min_w, min_h), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(min_w, min_h), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSizeConstraints(ImVec2(min_w, min_h), ImVec2(FLT_MAX, FLT_MAX));
     if (ImGui::Begin(win->title, &win->open)) {
         _ui_kbd_draw_plane_combo(win);
@@ -293,5 +298,15 @@ void ui_kbd_draw(ui_kbd_t* win) {
         _ui_kbd_draw_matrix(win, canvas_pos, win->last_key_mask);
     }
     ImGui::End();
+}
+
+void ui_kbd_save_settings(ui_kbd_t* win, ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    ui_settings_add(settings, win->title, win->open);
+}
+
+void ui_kbd_load_settings(ui_kbd_t* win, const ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    win->open = ui_settings_isopen(settings, win->title);
 }
 #endif /* CHIPS_UI_IMPL */

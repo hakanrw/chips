@@ -8,11 +8,11 @@
     ~~~C
     #define CHIPS_UI_IMPL
     ~~~
-    before you include this file in *one* C++ file to create the 
+    before you include this file in *one* C++ file to create the
     implementation.
 
     Optionally provide the following macros with your own implementation
-    
+
     ~~~C
     CHIPS_ASSERT(c)
     ~~~
@@ -27,6 +27,7 @@
         - m6502.h
         - ui_chip.h
         - ui_util.h
+        - ui_settings.h
 
     All strings provided to ui_m6502_init() must remain alive until
     ui_m6502_discard() is called!
@@ -47,7 +48,7 @@
         2. Altered source versions must be plainly marked as such, and must not
         be misrepresented as being the original software.
         3. This notice may not be removed or altered from any source
-        distribution. 
+        distribution.
 #*/
 #include <stdint.h>
 #include <stdbool.h>
@@ -74,6 +75,7 @@ typedef struct {
     float init_x, init_y;
     float init_w, init_h;
     bool open;
+    bool last_open;
     bool valid;
     ui_chip_t chip;
 } ui_m6502_t;
@@ -81,6 +83,8 @@ typedef struct {
 void ui_m6502_init(ui_m6502_t* win, const ui_m6502_desc_t* desc);
 void ui_m6502_discard(ui_m6502_t* win);
 void ui_m6502_draw(ui_m6502_t* win);
+void ui_m6502_save_settings(ui_m6502_t* win, ui_settings_t* settings);
+void ui_m6502_load_settings(ui_m6502_t* win, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -108,7 +112,7 @@ void ui_m6502_init(ui_m6502_t* win, const ui_m6502_desc_t* desc) {
     win->init_y = (float) desc->y;
     win->init_w = (float) ((desc->w == 0) ? 360 : desc->w);
     win->init_h = (float) ((desc->h == 0) ? 320 : desc->h);
-    win->open = desc->open;
+    win->open = win->last_open = desc->open;
     win->valid = true;
     ui_chip_init(&win->chip, &desc->chip_desc);
 }
@@ -153,11 +157,12 @@ static void _ui_m6502_regs(ui_m6502_t* win) {
 
 void ui_m6502_draw(ui_m6502_t* win) {
     CHIPS_ASSERT(win && win->valid && win->cpu);
+    ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
         return;
     }
-    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(win->title, &win->open)) {
         ImGui::BeginChild("##m6502_chip", ImVec2(176, 0), true);
         ui_chip_draw(&win->chip, win->cpu->PINS);
@@ -168,5 +173,15 @@ void ui_m6502_draw(ui_m6502_t* win) {
         ImGui::EndChild();
     }
     ImGui::End();
+}
+
+void ui_m6502_save_settings(ui_m6502_t* win, ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    ui_settings_add(settings, win->title, win->open);
+}
+
+void ui_m6502_load_settings(ui_m6502_t* win, const ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    win->open = ui_settings_isopen(settings, win->title);
 }
 #endif /* CHIPS_UI_IMPL */

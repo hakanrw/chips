@@ -1,15 +1,13 @@
 This directory contains code-generation python scripts which will generate the
 z80.h, m6502.h and mc6800.h headers.
 
-First install pyyaml:
+In a bash compatible shell run:
 
-pip3 install pyyaml
+```sh
+./z80_gen.sh
+./m6502_gen.sh
+./mc6800_gen.py
+```
 
-Then run:
-
-> python3 z80_gen.py
-> python3 m6502_gen.py
-> python3 mc6800_gen.py
-
-To generate the respective decoder source files in the '../chips' directory.
-
+This will run Python3 inside a virtual environment and read/write the `chips/z80.h`, 
+`chips/m6502.h` and `chips/mc6800.h` headers.

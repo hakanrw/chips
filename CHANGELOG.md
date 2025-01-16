@@ -1,5 +1,30 @@
 ## What's New
 
+ * **11-Jan-2025**: writing data back to floppy is now supported in the CPC emulation
+  (see: https://github.com/floooh/chips/issues/104 and https://github.com/floooh/chips/pull/105),
+  note though that the floppy emulation in the CPC is still very rough. Many thanks to @karlvr for the PR!
+
+* **02-Jan-2025**: Integrated some 'structural ideas' from the Zig Z80 emulator into z80.h
+  (everything backward compatible and no behaviour changes):
+  - Got rid of lookup tables which mapped opcodes to the first instruction
+    payload step in the decoder switch-case statement. Instead the first
+    512 case-branches in the decoder switch-case directly map to the first
+    (and for 4-cycle instructions: only) payload step (256 for the main
+    instruction subset and the next 256 for the ED-prefixed subset).
+  - Stepping to the next decoder step is now always 'exclusive', instead
+    of incrementing the current step, an explicit step number is written.
+    This appears to be a tiny faster.
+  - The separate input template files for the code generation of the Z80
+    and M6502 emulators have been removed, instead the generated code is
+    now injected into the actual source files (search for `<%` and `%>` markers).
+
+* **24-Dec-2024**: complete UI overhaul:
+
+  - switched to the Dear ImGui docking branch
+  - add imgui.ini persistency both for native and web builds
+  - add a window with the emulator's framebuffer content
+  - modernize Dear ImGui code (replaced deprecated Column- with Table-API)
+
 * **02-Jan-2024**:
 
   - Added a new 'web api' (a set of Javascript functions which allow controlling

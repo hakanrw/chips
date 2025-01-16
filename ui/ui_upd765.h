@@ -8,11 +8,11 @@
     ~~~C
     #define CHIPS_UI_IMPL
     ~~~
-    before you include this file in *one* C++ file to create the 
+    before you include this file in *one* C++ file to create the
     implementation.
 
     Optionally provide the following macros with your own implementation
-    
+
     ~~~C
     CHIPS_ASSERT(c)
     ~~~
@@ -21,6 +21,7 @@
     Include the following headers before the including the *declaration*:
         - upd765.h
         - ui_chip.h
+        - ui_settings.h
 
     Include the following headers before including the *implementation*:
         - imgui.h
@@ -47,7 +48,7 @@
         2. Altered source versions must be plainly marked as such, and must not
         be misrepresented as being the original software.
         3. This notice may not be removed or altered from any source
-        distribution. 
+        distribution.
 #*/
 #include <stdint.h>
 #include <stdbool.h>
@@ -74,6 +75,7 @@ typedef struct ui_upd765_t {
     float init_x, init_y;
     float init_w, init_h;
     bool open;
+    bool last_open;
     bool valid;
     ui_chip_t chip;
 } ui_upd765_t;
@@ -81,6 +83,8 @@ typedef struct ui_upd765_t {
 void ui_upd765_init(ui_upd765_t* win, const ui_upd765_desc_t* desc);
 void ui_upd765_discard(ui_upd765_t* win);
 void ui_upd765_draw(ui_upd765_t* win);
+void ui_upd765_save_settings(ui_upd765_t* win, ui_settings_t* settings);
+void ui_upd765_load_settings(ui_upd765_t* win, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -108,7 +112,7 @@ void ui_upd765_init(ui_upd765_t* win, ui_upd765_desc_t* desc) {
     win->init_y = (float) desc->y;
     win->init_w = (float) ((desc->w == 0) ? 496 : desc->w);
     win->init_h = (float) ((desc->h == 0) ? 400 : desc->h);
-    win->open = desc->open;
+    win->open = win->last_open = desc->open;
     win->valid = true;
     ui_chip_init(&win->chip, &desc->chip_desc);
 }
@@ -233,11 +237,12 @@ static void _ui_upd765_draw_state(ui_upd765_t* win) {
 
 void ui_upd765_draw(ui_upd765_t* win) {
     CHIPS_ASSERT(win && win->valid && win->title);
+    ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
         return;
     }
-    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(win->title, &win->open)) {
         ImGui::BeginChild("##chip", ImVec2(176, 0), true);
         ui_chip_draw(&win->chip, win->upd765->pins);
@@ -248,5 +253,15 @@ void ui_upd765_draw(ui_upd765_t* win) {
         ImGui::EndChild();
     }
     ImGui::End();
+}
+
+void ui_upd765_save_settings(ui_upd765_t* win, ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    ui_settings_add(settings, win->title, win->open);
+}
+
+void ui_upd765_load_settings(ui_upd765_t* win, const ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    win->open = ui_settings_isopen(settings, win->title);
 }
 #endif /* CHIPS_UI_IMPL */

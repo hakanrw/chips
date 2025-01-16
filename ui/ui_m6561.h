@@ -21,6 +21,7 @@
     Include the following headers before the including the *declaration*:
         - m6561.h
         - ui_chip.h
+        - ui_settings.h
 
     Include the following headers before including the *implementation*:
         - imgui.h
@@ -76,6 +77,7 @@ typedef struct ui_m6561_t {
     float init_x, init_y;
     float init_w, init_h;
     bool open;
+    bool last_open;
     bool valid;
     ui_chip_t chip;
 } ui_m6561_t;
@@ -83,6 +85,8 @@ typedef struct ui_m6561_t {
 void ui_m6561_init(ui_m6561_t* win, const ui_m6561_desc_t* desc);
 void ui_m6561_discard(ui_m6561_t* win);
 void ui_m6561_draw(ui_m6561_t* win);
+void ui_m6561_save_settings(ui_m6561_t* win, ui_settings_t* settings);
+void ui_m6561_load_settings(ui_m6561_t* win, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -111,7 +115,7 @@ void ui_m6561_init(ui_m6561_t* win, const ui_m6561_desc_t* desc) {
     win->init_y = (float) desc->y;
     win->init_w = (float) ((desc->w == 0) ? 440 : desc->w);
     win->init_h = (float) ((desc->h == 0) ? 416 : desc->h);
-    win->open = desc->open;
+    win->open = win->last_open = desc->open;
     win->valid = true;
     ui_chip_init(&win->chip, &desc->chip_desc);
 }
@@ -236,11 +240,12 @@ static void _ui_m6561_draw_sound(const ui_m6561_t* win) {
 
 void ui_m6561_draw(ui_m6561_t* win) {
     CHIPS_ASSERT(win && win->valid);
+    ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
         return;
     }
-    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(win->title, &win->open)) {
         ImGui::BeginChild("##m6561_chip", ImVec2(176, 0), true);
         ui_chip_draw(&win->chip, win->vic->pins);
@@ -259,6 +264,16 @@ void ui_m6561_draw(ui_m6561_t* win) {
         ImGui::EndChild();
     }
     ImGui::End();
+}
+
+void ui_m6561_save_settings(ui_m6561_t* win, ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    ui_settings_add(settings, win->title, win->open);
+}
+
+void ui_m6561_load_settings(ui_m6561_t* win, const ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    win->open = ui_settings_isopen(settings, win->title);
 }
 
 #endif /* CHIPS_UI_IMPL */

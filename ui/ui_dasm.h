@@ -8,7 +8,7 @@
     ~~~C
     #define CHIPS_UI_IMPL
     ~~~
-    before you include this file in *one* C++ file to create the 
+    before you include this file in *one* C++ file to create the
     implementation.
 
     Select the supported CPUs with the following macros (at least
@@ -18,7 +18,7 @@
     UI_DASM_USE_M6502
 
     Optionally provide the following macros with your own implementation
-    
+
     ~~~C
     CHIPS_ASSERT(c)
     ~~~
@@ -29,6 +29,7 @@
 
         - imgui.h
         - ui_util.h
+        - ui_settings.h
         - z80dasm.h     (only if UI_DASM_USE_Z80 is defined)
         - m6502dasm.h   (only if UI_DASM_USE_M6502 is defined)
 
@@ -51,7 +52,7 @@
         2. Altered source versions must be plainly marked as such, and must not
         be misrepresented as being the original software.
         3. This notice may not be removed or altered from any source
-        distribution. 
+        distribution.
 #*/
 #include <stdint.h>
 #include <stdbool.h>
@@ -102,6 +103,7 @@ typedef struct {
     float init_x, init_y;
     float init_w, init_h;
     bool open;
+    bool last_open;
     bool valid;
     uint16_t start_addr;
     uint16_t cur_addr;
@@ -119,6 +121,8 @@ typedef struct {
 void ui_dasm_init(ui_dasm_t* win, const ui_dasm_desc_t* desc);
 void ui_dasm_discard(ui_dasm_t* win);
 void ui_dasm_draw(ui_dasm_t* win);
+void ui_dasm_save_settings(ui_dasm_t* win, ui_settings_t* settings);
+void ui_dasm_load_settings(ui_dasm_t* ui, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -152,7 +156,7 @@ void ui_dasm_init(ui_dasm_t* win, const ui_dasm_desc_t* desc) {
     win->init_y = (float) desc->y;
     win->init_w = (float) ((desc->w == 0) ? 400 : desc->w);
     win->init_h = (float) ((desc->h == 0) ? 256 : desc->h);
-    win->open = desc->open;
+    win->open = win->last_open = desc->open;
     win->highlight_color = 0xFF30FF30;
     for (int i = 0; i < UI_DASM_MAX_LAYERS; i++) {
         if (desc->layers[i]) {
@@ -275,7 +279,7 @@ static bool _ui_dasm_jumptarget(ui_dasm_t* win, uint16_t pc, uint16_t* out_addr)
         else if (win->bin_pos == 2) {
             switch (win->bin_buf[0]) {
                 /* relative branch */
-                case 0x10: case 0x30: case 0x50: case 0x70: 
+                case 0x10: case 0x30: case 0x50: case 0x70:
                 case 0x90: case 0xB0: case 0xD0: case 0xF0:
                     *out_addr = pc + (int8_t)win->bin_buf[1];
                     return true;
@@ -439,16 +443,27 @@ static void _ui_dasm_draw_stack(ui_dasm_t* win) {
 
 void ui_dasm_draw(ui_dasm_t* win) {
     CHIPS_ASSERT(win && win->valid && win->title);
+    ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
         return;
     }
-    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(win->title, &win->open)) {
         _ui_dasm_draw_stack(win);
         ImGui::SameLine();
         _ui_dasm_draw_disasm(win);
     }
     ImGui::End();
+}
+
+void ui_dasm_save_settings(ui_dasm_t* win, ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    ui_settings_add(settings, win->title, win->open);
+}
+
+void ui_dasm_load_settings(ui_dasm_t* win, const ui_settings_t* settings) {
+    CHIPS_ASSERT(win && settings);
+    win->open = ui_settings_isopen(settings, win->title);
 }
 #endif /* CHIPS_UI_IMPL */
