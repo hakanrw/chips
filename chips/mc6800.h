@@ -357,7 +357,6 @@ static inline void _mc6800_daa(mc6800_t* cpu) {
 }
 
 static inline void _mc6800_update_brk_flags(mc6800_t* c, uint64_t pins) {
-    printf("irqpip: %d\n", c->irq_pip);
     if ((c->irq_pip & 0x400) && !(c->P & MC6800_IF)) {
         c->brk_flags |= MC6800_BRK_IRQ;
     }
