@@ -186,10 +186,10 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
     if (pins & MC6800_VMA) {
         if (sys->io_mapped) {
             if (addr >= 0x2000 && addr <= 0x3FFF) {
-                pia_pins |= 0;//M6526_CS; // TODO: Fix for PIA
+                pia_pins |= M6526_CS; // TODO: Fix for PIA
             }
             else if (addr >= 0x6000 && addr <= 0x63FF) {
-                piam_pins |= 0;//M6526_CS; // TODO: Fix for PIA
+                piam_pins |= M6526_CS; // TODO: Fix for PIA
             }
             else if (addr >= 0x6400 && addr <= 0x67FF) {
                 // Manual pg.23: External IO devices
@@ -211,6 +211,12 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
         // TODO
         // for now, force alphanumeric mode
         vdg_pins &= ~(MC6847_AG|MC6847_AS|MC6847_INTEXT|MC6847_INV);
+
+        MC6800_SET_DATA(pia_pins, 0xFF); // TODO fix
+
+        if ((pia_pins & (M6526_CS|M6526_RW)) == (M6526_CS|M6526_RW)) {
+            pins = MC6800_COPY_DATA(pins, pia_pins);
+        }
     }
 
     /* tick the VDG display chip (4x freq.)
