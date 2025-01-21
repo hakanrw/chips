@@ -442,8 +442,8 @@ uint16_t c64_syscall_return_addr(void);
     #define CHIPS_ASSERT(c) assert(c)
 #endif
 
-#define _C64_SCREEN_WIDTH (256)
-#define _C64_SCREEN_HEIGHT (192)
+#define _C64_SCREEN_WIDTH (392)
+#define _C64_SCREEN_HEIGHT (272)
 #define _C64_SCREEN_X (64)
 #define _C64_SCREEN_Y (24)
 
