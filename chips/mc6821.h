@@ -189,6 +189,10 @@ extern "C" {
 #define MC6821_CR_IRQ2        (1<<6)
 #define MC6821_CR_IRQ1        (1<<7)
 
+// aliases
+#define MC6821_CR_C2_B3       MC6821_CR_C2_IRQ     // for output mode
+#define MC6821_CR_C2_SET      MC6821_CR_C2_LTOH    // for output mode
+
 // I/O port state
 typedef struct {
 //    uint8_t inpr;
@@ -287,6 +291,28 @@ static inline void _mc6821_read_port_pins(mc6821_t* c, uint64_t pins) {
             c->pb.ctrl |= MC6821_CR_IRQ1;
     }
 
+    if (c->pa.ctrl & MC6821_CR_C2_OUT) {
+        c->pa.ctrl &= ~MC6821_CR_IRQ2; // irq2 is set to 0 on output mode
+    } else {
+        if (new_ca2 != old_ca2) {
+            if (new_ca2 && (c->pa.ctrl & MC6821_CR_C2_LTOH)) // set on low to high transition
+                c->pa.ctrl |= MC6821_CR_IRQ2;
+            if (!new_ca2 && !(c->pa.ctrl & MC6821_CR_C2_LTOH)) // set on high to low transition
+                c->pa.ctrl |= MC6821_CR_IRQ2;
+        }
+    }
+
+    if (c->pb.ctrl & MC6821_CR_C2_OUT) {
+        c->pb.ctrl &= ~MC6821_CR_IRQ2; // irq2 is set to 0 on output mode
+    } else {
+        if (new_cb2 != old_cb2 && !(c->pb.ctrl & MC6821_CR_C2_OUT)) {
+            if (new_cb2 && (c->pb.ctrl & MC6821_CR_C2_LTOH)) // set on low to high transition
+                c->pb.ctrl |= MC6821_CR_IRQ2;
+            if (!new_cb2 && !(c->pb.ctrl & MC6821_CR_C2_LTOH)) // set on high to low transition
+                c->pb.ctrl |= MC6821_CR_IRQ2;
+        }
+    }
+
     // TODO CA2 CB2
 
     c->pa.pins = MC6821_GET_PA(pins) & ~c->pa.ddr;
@@ -298,15 +324,17 @@ static inline uint64_t _mc6821_write_port_pins(mc6821_t* c, uint64_t pins) {
     c->pb.pins |= c->pb.outr & c->pb.ddr;
     MC6821_SET_PAB(pins, c->pa.pins, c->pb.pins);
 
-    /* TODO
-    pins &= ~(M6522_CA2|M6522_CB2);
-    if (c->pa.c2_out) {
-        pins |= M6522_CA2;
-    }
-    if (c->pb.c2_out) {
-        pins |= M6522_CB2;
-    }
-    */
+    if ((c->pa.ctrl & (MC6821_CR_C2_OUT|MC6821_CR_C2_SET)) == (MC6821_CR_C2_OUT|MC6821_CR_C2_SET)) // C2 is out, set mode
+        if (c->pa.ctrl & MC6821_CR_C2_B3) // on
+            pins |= MC6821_CA2;
+        else
+            pins &= ~MC6821_CA2;
+
+    if ((c->pb.ctrl & (MC6821_CR_C2_OUT|MC6821_CR_C2_SET)) == (MC6821_CR_C2_OUT|MC6821_CR_C2_SET)) // C2 is out, set mode
+        if (c->pb.ctrl & MC6821_CR_C2_B3) // on
+            pins |= MC6821_CB2;
+        else
+            pins &= ~MC6821_CB2;
 
     return pins;
 }
@@ -318,6 +346,12 @@ static uint64_t _mc6821_update_irq(mc6821_t* c, uint64_t pins) {
         pins |= MC6821_IRQA;
 
     if ((c->pb.ctrl & MC6821_CR_IRQ1) && (c->pb.ctrl & MC6821_CR_C1_IRQ))
+        pins |= MC6821_IRQB;
+
+    if ((c->pa.ctrl & MC6821_CR_IRQ2) && (c->pa.ctrl & MC6821_CR_C2_IRQ) && !(c->pa.ctrl & MC6821_CR_C2_OUT))
+        pins |= MC6821_IRQA;
+
+    if ((c->pb.ctrl & MC6821_CR_IRQ2) && (c->pb.ctrl & MC6821_CR_C2_IRQ) && !(c->pb.ctrl & MC6821_CR_C2_OUT))
         pins |= MC6821_IRQB;
 
     if (pins & (MC6821_IRQA|MC6821_IRQB))
@@ -341,11 +375,11 @@ static uint8_t _mc6821_read(mc6821_t* c, uint8_t addr) {
     switch (addr) {
         case MC6821_REG_CRA:
             data = c->pa.ctrl;
-            c->pa.ctrl &= ~MC6821_CR_IRQ1; // clear irq on read
+            c->pa.ctrl &= ~(MC6821_CR_IRQ1|MC6821_CR_IRQ2); // clear irq on read
             break;
         case MC6821_REG_CRB:
             data = c->pb.ctrl;
-            c->pb.ctrl &= ~MC6821_CR_IRQ1; // clear irq on read
+            c->pb.ctrl &= ~(MC6821_CR_IRQ1|MC6821_CR_IRQ2); // clear irq on read
             break;
         case MC6821_REG_PRA:
             if (c->pa.ctrl & MC6821_CR_PR)
@@ -367,9 +401,19 @@ static uint8_t _mc6821_read(mc6821_t* c, uint8_t addr) {
 static void _mc6821_write(mc6821_t* c, uint8_t addr, uint8_t data) {
     switch (addr) {
         case MC6821_REG_CRA:
+            data &= ~(MC6821_CR_IRQ1|MC6821_CR_IRQ2); // highest two bits are not writeable
+            data |= c->pa.ctrl & (MC6821_CR_IRQ1|MC6821_CR_IRQ2);
+            if ((data & MC6821_CR_C2_OUT) && !(data & MC6821_CR_C2_SET)) {
+                assert(false); // this mode is not supported currently
+            }
             c->pa.ctrl = data;
             break;
         case MC6821_REG_CRB:
+            data &= ~(MC6821_CR_IRQ1|MC6821_CR_IRQ2); // highest two bits are not writeable
+            data |= c->pb.ctrl & (MC6821_CR_IRQ1|MC6821_CR_IRQ2);
+            if ((data & MC6821_CR_C2_OUT) && !(data & MC6821_CR_C2_SET)) {
+                assert(false); // this mode is not supported currently
+            }
             c->pb.ctrl = data;
             break;
         case MC6821_REG_PRA:
