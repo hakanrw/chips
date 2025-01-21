@@ -76,6 +76,10 @@
         Step the mc6800_t instance for one clock cycle.
 
 
+    This file was written by Hakan Candar in 2024. However, it takes significant
+    inspiration from the structure and design of source files written by Andre
+    Weissflog for this project.
+
     ## zlib/libpng license
 
     Copyright (c) 2024 Hakan Candar
