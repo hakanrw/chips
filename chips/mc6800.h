@@ -495,6 +495,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
     // address is stable by default
     _ON(MC6800_VMA);
     switch (c->IR++) {
+    // <% decoder
     /* NOP  */
         case (0x00<<4)|0: _VMA();break;
         case (0x00<<4)|1: _FETCH();break;
@@ -4847,7 +4848,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xFF<<4)|13: assert(false);break;
         case (0xFF<<4)|14: assert(false);break;
         case (0xFF<<4)|15: assert(false);break;
-
+    // %>
     }
     c->PINS = pins;
     c->irq_pip <<= 1;

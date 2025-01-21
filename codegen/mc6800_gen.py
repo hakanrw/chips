@@ -2,10 +2,9 @@
 #   mc6800_gen.py
 #   Generate instruction decoder for mc6800.h emulator.
 #-------------------------------------------------------------------------------
-from string import Template
+import templ
 
-InpPath = 'mc6800.template.h'
-OutPath = '../chips/mc6800.h'
+INOUT_PATH = '../chips/mc6800.h'
 
 # flag bits
 CF = (1<<0)
@@ -896,22 +895,21 @@ def enc_op(op):
         o.t('_FETCH();')
     return o
 
-#-------------------------------------------------------------------------------
-#   execution starts here
-#
-for op in range(0, 256):
-    write_op(enc_op(op))
+def write_result():
+    with open(INOUT_PATH, 'r') as f:
+        lines = f.read().splitlines()
+        lines = templ.replace(lines, 'decoder', out_lines)
+    out_str = '\n'.join(lines) + '\n'
+    with open(INOUT_PATH, 'w') as f:
+        f.write(out_str)
 
-with open(InpPath, 'r') as inf:
-    templ = Template(inf.read())
-    c_src = templ.safe_substitute(decode_block=out_lines)
-    with open(OutPath, 'w') as outf:
-        outf.write(c_src)
+if __name__ == '__main__':
+    for op in range(0, 256):
+        write_op(enc_op(op))
+    write_result()
 
 
 # TODO
 # implement half-carry flag on sub/add/sbc/adc
 # fix wrong cycle count on TST (must be 6 on abs, 7 on idx)
-# implement last 4 branch operations
-# implement bsr/jsr
 # check cycle counts for all instructions
