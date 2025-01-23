@@ -2875,8 +2875,8 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x8B<<4)|13: assert(false);break;
         case (0x8B<<4)|14: assert(false);break;
         case (0x8B<<4)|15: assert(false);break;
-    /* CPX # */
-        case (0x8C<<4)|0: _SA(c->PC++);break;
+    /* CPX #16 */
+        case (0x8C<<4)|0: _SA(c->PC++);c->PC++;break;
         case (0x8C<<4)|1: c->AD=_GD();c->AD<<=8;_SA(_GA()+1);break;
         case (0x8C<<4)|2: c->AD=c->AD|_GD();_mc6800_cpx(c, c->AD);_FETCH();break;
         case (0x8C<<4)|3: assert(false);break;
