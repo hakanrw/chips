@@ -232,6 +232,7 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
             else if (addr >= 0x6400 && addr <= 0x67FF) {
                 // Manual pg.23: External IO devices
                 // TODO
+                assert(false);
             }
             else {
                 mem_access = true;
@@ -289,6 +290,8 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
         }
         else {
             // memory write
+            if (addr >= 0x4000 && addr <= 0x5FFF)
+                assert(false); // rom write
             mem_wr(&sys->mem_cpu, addr, MC6800_GET_DATA(pins));
         }
     }
