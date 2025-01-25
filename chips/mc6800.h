@@ -353,7 +353,7 @@ static inline void _mc6800_cpx(mc6800_t* cpu, uint16_t val) {
 }
 
 static inline void _mc6800_daa(mc6800_t* cpu) {
-    puts("_mc6800_daa: not implemented");
+    fprintf(stderr,"_mc6800_daa: not implemented\n");
 }
 
 static inline void _mc6800_update_brk_flags(mc6800_t* c, uint64_t pins) {
@@ -487,7 +487,6 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
 
         // TODO check above
     }
-
 
     // reads are default, writes are special
     _RD();
