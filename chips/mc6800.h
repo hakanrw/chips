@@ -247,6 +247,14 @@ uint64_t mc6800_tick(mc6800_t* cpu, uint64_t pins);
 
 static inline uint8_t _mc6800_asl(mc6800_t* cpu, uint8_t v) {
     cpu->P = (_MC6800_NZ(cpu->P, v<<1) & ~MC6800_CF) | ((v & 0x80) ? MC6800_CF:0);
+
+    if (((cpu->P & MC6800_NF) && !(cpu->P & MC6800_CF)) || 
+        (!(cpu->P & MC6800_NF) && (cpu->P & MC6800_CF))) {
+        cpu->P = _MC6800_VF(cpu->P, true);
+    } else {
+	cpu->P = _MC6800_VF(cpu->P, false);
+    }
+
     return v<<1;
 }
 
