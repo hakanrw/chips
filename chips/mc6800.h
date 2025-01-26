@@ -1704,7 +1704,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x46<<4)|14: assert(false);break;
         case (0x46<<4)|15: assert(false);break;
     /* ASRA  */
-        case (0x47<<4)|0: c->A=(_GD()&0x80)|_mc6800_lsr(c, c->A);_NZ(c->A);_VMA();break;
+        case (0x47<<4)|0: c->A=(c->A&0x80)|_mc6800_lsr(c, c->A);_NZ(c->A);_VMA();break;
         case (0x47<<4)|1: _FETCH();break;
         case (0x47<<4)|2: assert(false);break;
         case (0x47<<4)|3: assert(false);break;
@@ -1976,7 +1976,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x56<<4)|14: assert(false);break;
         case (0x56<<4)|15: assert(false);break;
     /* ASRB  */
-        case (0x57<<4)|0: c->B=(_GD()&0x80)|_mc6800_lsr(c, c->B);_NZ(c->B);_VMA();break;
+        case (0x57<<4)|0: c->B=(c->B&0x80)|_mc6800_lsr(c, c->B);_NZ(c->B);_VMA();break;
         case (0x57<<4)|1: _FETCH();break;
         case (0x57<<4)|2: assert(false);break;
         case (0x57<<4)|3: assert(false);break;
