@@ -241,9 +241,9 @@ uint64_t mc6800_tick(mc6800_t* cpu, uint64_t pins);
 #endif
 
 /* helper macros and functions for code-generated instruction decoder */
-#define _MC6800_NZ(p,v) ((p&~(MC6800_NF|MC6800_ZF))|((v&0xFF)?((v)>>4&MC6800_NF):MC6800_ZF))
-#define _MC6800_NZ16(p,v) ((p&~(MC6800_NF|MC6800_ZF))|((v&0xFFFF)?((v)>>12&MC6800_NF):MC6800_ZF))
-#define _MC6800_VF(p,v) ((p&~MC6800_VF)|(v?MC6800_VF:0))
+#define _MC6800_NZ(p,v) (((p)&~(MC6800_NF|MC6800_ZF))|(((v)&0xFF)?((v)>>4&MC6800_NF):MC6800_ZF))
+#define _MC6800_NZ16(p,v) (((p)&~(MC6800_NF|MC6800_ZF))|(((v)&0xFFFF)?((v)>>12&MC6800_NF):MC6800_ZF))
+#define _MC6800_VF(p,v) (((p)&~MC6800_VF)|((v)?MC6800_VF:0))
 
 static inline uint8_t _mc6800_asl(mc6800_t* cpu, uint8_t v) {
     cpu->P = (_MC6800_NZ(cpu->P, v<<1) & ~MC6800_CF) | ((v & 0x80) ? MC6800_CF:0);
@@ -422,7 +422,7 @@ uint64_t mc6800_init(mc6800_t* c) {
 /* fetch next opcode byte */
 #define _FETCH() _SA(c->PC);c->next_instr=true;
 /* set 8-bit data in 64-bit pin mask */
-#define _SD(data) pins=((pins&~0xFF0000ULL)|(((data&0xFF)<<16)&0xFF0000ULL))
+#define _SD(data) pins=((pins&~0xFF0000ULL)|((((data)&0xFF)<<16)&0xFF0000ULL))
 /* extract 8-bit data from 64-bit pin mask */
 #define _GD() ((uint8_t)((pins&0xFF0000ULL)>>16))
 /* enable control pins */
@@ -2284,7 +2284,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x67<<4)|2: _SA(c->AD);_VMA();break;
         case (0x67<<4)|3: _VMA();break;
         case (0x67<<4)|4: break;
-        case (0x67<<4)|5: _SD((_GD()&0x80)|_mc6800_lsr(c, _GD()));_NZ(_GD());_WR();break;
+        case (0x67<<4)|5: _SD(_mc6800_asr(c, _GD()));_WR();break;
         case (0x67<<4)|6: _FETCH();break;
         case (0x67<<4)|7: assert(false);break;
         case (0x67<<4)|8: assert(false);break;
@@ -2555,7 +2555,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x77<<4)|1: _SA(c->PC++);c->AD=_GD();break;
         case (0x77<<4)|2: _SA(_GD()|(c->AD<<8));_VMA();break;
         case (0x77<<4)|3: break;
-        case (0x77<<4)|4: _SD((_GD()&0x80)|_mc6800_lsr(c, _GD()));_NZ(_GD());_WR();break;
+        case (0x77<<4)|4: _SD(_mc6800_asr(c, _GD()));_WR();break;
         case (0x77<<4)|5: _FETCH();break;
         case (0x77<<4)|6: assert(false);break;
         case (0x77<<4)|7: assert(false);break;
