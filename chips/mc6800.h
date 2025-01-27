@@ -258,8 +258,29 @@ static inline uint8_t _mc6800_asl(mc6800_t* cpu, uint8_t v) {
     return v<<1;
 }
 
+static inline uint8_t _mc6800_asr(mc6800_t* cpu, uint8_t v) {
+    cpu->P = (_MC6800_NZ(cpu->P, (0x80&v)|(v>>1)) & ~MC6800_CF) | ((v & 0x01) ? MC6800_CF:0);
+
+    if (((cpu->P & MC6800_NF) && !(cpu->P & MC6800_CF)) || 
+        (!(cpu->P & MC6800_NF) && (cpu->P & MC6800_CF))) {
+        cpu->P = _MC6800_VF(cpu->P, true);
+    } else {
+        cpu->P = _MC6800_VF(cpu->P, false);
+    }
+
+    return (0x80&v)|(v>>1);
+}
+
 static inline uint8_t _mc6800_lsr(mc6800_t* cpu, uint8_t v) {
     cpu->P = (_MC6800_NZ(cpu->P, v>>1) & ~MC6800_CF) | ((v & 0x01) ? MC6800_CF:0);
+
+    if (((cpu->P & MC6800_NF) && !(cpu->P & MC6800_CF)) || 
+        (!(cpu->P & MC6800_NF) && (cpu->P & MC6800_CF))) {
+        cpu->P = _MC6800_VF(cpu->P, true);
+    } else {
+        cpu->P = _MC6800_VF(cpu->P, false);
+    }
+
     return v>>1;
 }
 
@@ -1714,7 +1735,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x46<<4)|14: assert(false);break;
         case (0x46<<4)|15: assert(false);break;
     /* ASRA  */
-        case (0x47<<4)|0: c->A=(c->A&0x80)|_mc6800_lsr(c, c->A);_NZ(c->A);_VMA();break;
+        case (0x47<<4)|0: c->A=_mc6800_asr(c, c->A);_VMA();break;
         case (0x47<<4)|1: _FETCH();break;
         case (0x47<<4)|2: assert(false);break;
         case (0x47<<4)|3: assert(false);break;
@@ -1986,7 +2007,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x56<<4)|14: assert(false);break;
         case (0x56<<4)|15: assert(false);break;
     /* ASRB  */
-        case (0x57<<4)|0: c->B=(c->B&0x80)|_mc6800_lsr(c, c->B);_NZ(c->B);_VMA();break;
+        case (0x57<<4)|0: c->B=_mc6800_asr(c, c->B);_VMA();break;
         case (0x57<<4)|1: _FETCH();break;
         case (0x57<<4)|2: assert(false);break;
         case (0x57<<4)|3: assert(false);break;
