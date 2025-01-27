@@ -353,9 +353,9 @@ static inline void _mc6800_cmp(mc6800_t* cpu, uint8_t curr, uint8_t val) {
 
 static inline void _mc6800_cpx(mc6800_t* cpu, uint16_t val) {
     uint16_t diff = cpu->IX - val;
-    cpu->P &= ~(MC6800_VF|MC6800_CF);
+    cpu->P &= ~MC6800_VF;
     cpu->P = _MC6800_NZ16(cpu->P, diff);
-    if ((cpu->IX^val) & (cpu->IX^diff) & 0x80) {
+    if ((cpu->IX^val) & (cpu->IX^diff) & 0x8000) {
         cpu->P |= MC6800_VF;
     }
 }
@@ -380,6 +380,8 @@ static inline void _mc6800_update_brk_flags(mc6800_t* c, uint64_t pins) {
 }
 
 #undef _MC6800_NZ
+#undef _MC6800_NZ16
+#undef _MC6800_VF
 
 uint64_t mc6800_init(mc6800_t* c) {
     CHIPS_ASSERT(c);
