@@ -664,7 +664,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x07<<4)|14: assert(false);break;
         case (0x07<<4)|15: assert(false);break;
     /* INX  */
-        case (0x08<<4)|0: c->IX++;_ZF(c->IX);_VMA();break;
+        case (0x08<<4)|0: c->IX++;_ZF(c->IX==0);_VMA();break;
         case (0x08<<4)|1: _FETCH();break;
         case (0x08<<4)|2: assert(false);break;
         case (0x08<<4)|3: assert(false);break;
@@ -681,7 +681,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x08<<4)|14: assert(false);break;
         case (0x08<<4)|15: assert(false);break;
     /* DEX  */
-        case (0x09<<4)|0: c->IX--;_ZF(c->IX);_VMA();break;
+        case (0x09<<4)|0: c->IX--;_ZF(c->IX==0);_VMA();break;
         case (0x09<<4)|1: _FETCH();break;
         case (0x09<<4)|2: assert(false);break;
         case (0x09<<4)|3: assert(false);break;
