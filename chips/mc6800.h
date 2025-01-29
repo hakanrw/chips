@@ -528,7 +528,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
     switch (c->IR++) {
     // <% decoder
     /* NOP  */
-        case (0x00<<4)|0: _VMA();break;
+        case (0x00<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x00<<4)|1: _FETCH();break;
         case (0x00<<4)|2: assert(false);break;
         case (0x00<<4)|3: assert(false);break;
@@ -562,7 +562,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x01<<4)|14: assert(false);break;
         case (0x01<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x02<<4)|0: _VMA();break;
+        case (0x02<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x02<<4)|1: _FETCH();break;
         case (0x02<<4)|2: assert(false);break;
         case (0x02<<4)|3: assert(false);break;
@@ -579,7 +579,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x02<<4)|14: assert(false);break;
         case (0x02<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x03<<4)|0: _VMA();break;
+        case (0x03<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x03<<4)|1: _FETCH();break;
         case (0x03<<4)|2: assert(false);break;
         case (0x03<<4)|3: assert(false);break;
@@ -596,7 +596,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x03<<4)|14: assert(false);break;
         case (0x03<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x04<<4)|0: _VMA();break;
+        case (0x04<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x04<<4)|1: _FETCH();break;
         case (0x04<<4)|2: assert(false);break;
         case (0x04<<4)|3: assert(false);break;
@@ -613,7 +613,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x04<<4)|14: assert(false);break;
         case (0x04<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x05<<4)|0: _VMA();break;
+        case (0x05<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x05<<4)|1: _FETCH();break;
         case (0x05<<4)|2: assert(false);break;
         case (0x05<<4)|3: assert(false);break;
@@ -834,7 +834,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x11<<4)|14: assert(false);break;
         case (0x11<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x12<<4)|0: _VMA();break;
+        case (0x12<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x12<<4)|1: _FETCH();break;
         case (0x12<<4)|2: assert(false);break;
         case (0x12<<4)|3: assert(false);break;
@@ -851,7 +851,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x12<<4)|14: assert(false);break;
         case (0x12<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x13<<4)|0: _VMA();break;
+        case (0x13<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x13<<4)|1: _FETCH();break;
         case (0x13<<4)|2: assert(false);break;
         case (0x13<<4)|3: assert(false);break;
@@ -867,8 +867,8 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x13<<4)|13: assert(false);break;
         case (0x13<<4)|14: assert(false);break;
         case (0x13<<4)|15: assert(false);break;
-    /* NOP  */
-        case (0x14<<4)|0: _VMA();break;
+    /* NBA  */
+        case (0x14<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VF(false);c->A&=c->B;_NZ(c->A);_VMA();break;
         case (0x14<<4)|1: _FETCH();break;
         case (0x14<<4)|2: assert(false);break;
         case (0x14<<4)|3: assert(false);break;
@@ -885,7 +885,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x14<<4)|14: assert(false);break;
         case (0x14<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x15<<4)|0: _VMA();break;
+        case (0x15<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x15<<4)|1: _FETCH();break;
         case (0x15<<4)|2: assert(false);break;
         case (0x15<<4)|3: assert(false);break;
@@ -936,7 +936,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x17<<4)|14: assert(false);break;
         case (0x17<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x18<<4)|0: _VMA();break;
+        case (0x18<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x18<<4)|1: _FETCH();break;
         case (0x18<<4)|2: assert(false);break;
         case (0x18<<4)|3: assert(false);break;
@@ -970,7 +970,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x19<<4)|14: assert(false);break;
         case (0x19<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x1A<<4)|0: _VMA();break;
+        case (0x1A<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x1A<<4)|1: _FETCH();break;
         case (0x1A<<4)|2: assert(false);break;
         case (0x1A<<4)|3: assert(false);break;
@@ -1004,7 +1004,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x1B<<4)|14: assert(false);break;
         case (0x1B<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x1C<<4)|0: _VMA();break;
+        case (0x1C<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x1C<<4)|1: _FETCH();break;
         case (0x1C<<4)|2: assert(false);break;
         case (0x1C<<4)|3: assert(false);break;
@@ -1021,7 +1021,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x1C<<4)|14: assert(false);break;
         case (0x1C<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x1D<<4)|0: _VMA();break;
+        case (0x1D<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x1D<<4)|1: _FETCH();break;
         case (0x1D<<4)|2: assert(false);break;
         case (0x1D<<4)|3: assert(false);break;
@@ -1038,7 +1038,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x1D<<4)|14: assert(false);break;
         case (0x1D<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x1E<<4)|0: _VMA();break;
+        case (0x1E<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x1E<<4)|1: _FETCH();break;
         case (0x1E<<4)|2: assert(false);break;
         case (0x1E<<4)|3: assert(false);break;
@@ -1055,7 +1055,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x1E<<4)|14: assert(false);break;
         case (0x1E<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x1F<<4)|0: _VMA();break;
+        case (0x1F<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x1F<<4)|1: _FETCH();break;
         case (0x1F<<4)|2: assert(false);break;
         case (0x1F<<4)|3: assert(false);break;
@@ -1090,7 +1090,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x20<<4)|15: assert(false);break;
     /* NOP # */
         case (0x21<<4)|0: _SA(c->PC++);break;
-        case (0x21<<4)|1: _VMA();break;
+        case (0x21<<4)|1: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x21<<4)|2: _FETCH();break;
         case (0x21<<4)|3: assert(false);break;
         case (0x21<<4)|4: assert(false);break;
@@ -1480,7 +1480,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x37<<4)|14: assert(false);break;
         case (0x37<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x38<<4)|0: _VMA();break;
+        case (0x38<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x38<<4)|1: _FETCH();break;
         case (0x38<<4)|2: assert(false);break;
         case (0x38<<4)|3: assert(false);break;
@@ -1514,7 +1514,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x39<<4)|14: assert(false);break;
         case (0x39<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x3A<<4)|0: _VMA();break;
+        case (0x3A<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x3A<<4)|1: _FETCH();break;
         case (0x3A<<4)|2: assert(false);break;
         case (0x3A<<4)|3: assert(false);break;
@@ -1548,7 +1548,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x3B<<4)|14: assert(false);break;
         case (0x3B<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x3C<<4)|0: _VMA();break;
+        case (0x3C<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x3C<<4)|1: _FETCH();break;
         case (0x3C<<4)|2: assert(false);break;
         case (0x3C<<4)|3: assert(false);break;
@@ -1565,7 +1565,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x3C<<4)|14: assert(false);break;
         case (0x3C<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x3D<<4)|0: _VMA();break;
+        case (0x3D<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x3D<<4)|1: _FETCH();break;
         case (0x3D<<4)|2: assert(false);break;
         case (0x3D<<4)|3: assert(false);break;
@@ -1633,7 +1633,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x40<<4)|14: assert(false);break;
         case (0x40<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x41<<4)|0: _VMA();break;
+        case (0x41<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x41<<4)|1: _FETCH();break;
         case (0x41<<4)|2: assert(false);break;
         case (0x41<<4)|3: assert(false);break;
@@ -1650,7 +1650,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x41<<4)|14: assert(false);break;
         case (0x41<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x42<<4)|0: _VMA();break;
+        case (0x42<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x42<<4)|1: _FETCH();break;
         case (0x42<<4)|2: assert(false);break;
         case (0x42<<4)|3: assert(false);break;
@@ -1701,7 +1701,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x44<<4)|14: assert(false);break;
         case (0x44<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x45<<4)|0: _VMA();break;
+        case (0x45<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x45<<4)|1: _FETCH();break;
         case (0x45<<4)|2: assert(false);break;
         case (0x45<<4)|3: assert(false);break;
@@ -1803,7 +1803,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x4A<<4)|14: assert(false);break;
         case (0x4A<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x4B<<4)|0: _VMA();break;
+        case (0x4B<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x4B<<4)|1: _FETCH();break;
         case (0x4B<<4)|2: assert(false);break;
         case (0x4B<<4)|3: assert(false);break;
@@ -1854,7 +1854,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x4D<<4)|14: assert(false);break;
         case (0x4D<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x4E<<4)|0: _VMA();break;
+        case (0x4E<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x4E<<4)|1: _FETCH();break;
         case (0x4E<<4)|2: assert(false);break;
         case (0x4E<<4)|3: assert(false);break;
@@ -1905,7 +1905,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x50<<4)|14: assert(false);break;
         case (0x50<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x51<<4)|0: _VMA();break;
+        case (0x51<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x51<<4)|1: _FETCH();break;
         case (0x51<<4)|2: assert(false);break;
         case (0x51<<4)|3: assert(false);break;
@@ -1922,7 +1922,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x51<<4)|14: assert(false);break;
         case (0x51<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x52<<4)|0: _VMA();break;
+        case (0x52<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x52<<4)|1: _FETCH();break;
         case (0x52<<4)|2: assert(false);break;
         case (0x52<<4)|3: assert(false);break;
@@ -1973,7 +1973,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x54<<4)|14: assert(false);break;
         case (0x54<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x55<<4)|0: _VMA();break;
+        case (0x55<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x55<<4)|1: _FETCH();break;
         case (0x55<<4)|2: assert(false);break;
         case (0x55<<4)|3: assert(false);break;
@@ -2075,7 +2075,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x5A<<4)|14: assert(false);break;
         case (0x5A<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x5B<<4)|0: _VMA();break;
+        case (0x5B<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x5B<<4)|1: _FETCH();break;
         case (0x5B<<4)|2: assert(false);break;
         case (0x5B<<4)|3: assert(false);break;
@@ -2126,7 +2126,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x5D<<4)|14: assert(false);break;
         case (0x5D<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x5E<<4)|0: _VMA();break;
+        case (0x5E<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x5E<<4)|1: _FETCH();break;
         case (0x5E<<4)|2: assert(false);break;
         case (0x5E<<4)|3: assert(false);break;
@@ -2177,7 +2177,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x60<<4)|14: assert(false);break;
         case (0x60<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x61<<4)|0: _VMA();break;
+        case (0x61<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x61<<4)|1: _FETCH();break;
         case (0x61<<4)|2: assert(false);break;
         case (0x61<<4)|3: assert(false);break;
@@ -2194,7 +2194,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x61<<4)|14: assert(false);break;
         case (0x61<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x62<<4)|0: _VMA();break;
+        case (0x62<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x62<<4)|1: _FETCH();break;
         case (0x62<<4)|2: assert(false);break;
         case (0x62<<4)|3: assert(false);break;
@@ -2245,7 +2245,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x64<<4)|14: assert(false);break;
         case (0x64<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x65<<4)|0: _VMA();break;
+        case (0x65<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x65<<4)|1: _FETCH();break;
         case (0x65<<4)|2: assert(false);break;
         case (0x65<<4)|3: assert(false);break;
@@ -2347,7 +2347,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x6A<<4)|14: assert(false);break;
         case (0x6A<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x6B<<4)|0: _VMA();break;
+        case (0x6B<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x6B<<4)|1: _FETCH();break;
         case (0x6B<<4)|2: assert(false);break;
         case (0x6B<<4)|3: assert(false);break;
@@ -2449,7 +2449,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x70<<4)|14: assert(false);break;
         case (0x70<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x71<<4)|0: _VMA();break;
+        case (0x71<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x71<<4)|1: _FETCH();break;
         case (0x71<<4)|2: assert(false);break;
         case (0x71<<4)|3: assert(false);break;
@@ -2466,7 +2466,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x71<<4)|14: assert(false);break;
         case (0x71<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x72<<4)|0: _VMA();break;
+        case (0x72<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x72<<4)|1: _FETCH();break;
         case (0x72<<4)|2: assert(false);break;
         case (0x72<<4)|3: assert(false);break;
@@ -2517,7 +2517,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x74<<4)|14: assert(false);break;
         case (0x74<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x75<<4)|0: _VMA();break;
+        case (0x75<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x75<<4)|1: _FETCH();break;
         case (0x75<<4)|2: assert(false);break;
         case (0x75<<4)|3: assert(false);break;
@@ -2619,7 +2619,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x7A<<4)|14: assert(false);break;
         case (0x7A<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x7B<<4)|0: _VMA();break;
+        case (0x7B<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x7B<<4)|1: _FETCH();break;
         case (0x7B<<4)|2: assert(false);break;
         case (0x7B<<4)|3: assert(false);break;
@@ -2755,7 +2755,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x82<<4)|14: assert(false);break;
         case (0x82<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x83<<4)|0: _VMA();break;
+        case (0x83<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x83<<4)|1: _FETCH();break;
         case (0x83<<4)|2: assert(false);break;
         case (0x83<<4)|3: assert(false);break;
@@ -2823,7 +2823,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x86<<4)|14: assert(false);break;
         case (0x86<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x87<<4)|0: _VMA();break;
+        case (0x87<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x87<<4)|1: _FETCH();break;
         case (0x87<<4)|2: assert(false);break;
         case (0x87<<4)|3: assert(false);break;
@@ -2959,7 +2959,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x8E<<4)|14: assert(false);break;
         case (0x8E<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x8F<<4)|0: _VMA();break;
+        case (0x8F<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x8F<<4)|1: _FETCH();break;
         case (0x8F<<4)|2: assert(false);break;
         case (0x8F<<4)|3: assert(false);break;
@@ -3027,7 +3027,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x92<<4)|14: assert(false);break;
         case (0x92<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x93<<4)|0: _VMA();break;
+        case (0x93<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x93<<4)|1: _FETCH();break;
         case (0x93<<4)|2: assert(false);break;
         case (0x93<<4)|3: assert(false);break;
@@ -3197,7 +3197,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0x9C<<4)|14: assert(false);break;
         case (0x9C<<4)|15: assert(false);break;
     /* NOP  */
-        case (0x9D<<4)|0: _VMA();break;
+        case (0x9D<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0x9D<<4)|1: _FETCH();break;
         case (0x9D<<4)|2: assert(false);break;
         case (0x9D<<4)|3: assert(false);break;
@@ -3299,7 +3299,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xA2<<4)|14: assert(false);break;
         case (0xA2<<4)|15: assert(false);break;
     /* NOP  */
-        case (0xA3<<4)|0: _VMA();break;
+        case (0xA3<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0xA3<<4)|1: _FETCH();break;
         case (0xA3<<4)|2: assert(false);break;
         case (0xA3<<4)|3: assert(false);break;
@@ -3571,7 +3571,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xB2<<4)|14: assert(false);break;
         case (0xB2<<4)|15: assert(false);break;
     /* NOP  */
-        case (0xB3<<4)|0: _VMA();break;
+        case (0xB3<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0xB3<<4)|1: _FETCH();break;
         case (0xB3<<4)|2: assert(false);break;
         case (0xB3<<4)|3: assert(false);break;
@@ -3843,7 +3843,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xC2<<4)|14: assert(false);break;
         case (0xC2<<4)|15: assert(false);break;
     /* NOP  */
-        case (0xC3<<4)|0: _VMA();break;
+        case (0xC3<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0xC3<<4)|1: _FETCH();break;
         case (0xC3<<4)|2: assert(false);break;
         case (0xC3<<4)|3: assert(false);break;
@@ -3911,7 +3911,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xC6<<4)|14: assert(false);break;
         case (0xC6<<4)|15: assert(false);break;
     /* NOP  */
-        case (0xC7<<4)|0: _VMA();break;
+        case (0xC7<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0xC7<<4)|1: _FETCH();break;
         case (0xC7<<4)|2: assert(false);break;
         case (0xC7<<4)|3: assert(false);break;
@@ -3995,10 +3995,10 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xCB<<4)|13: assert(false);break;
         case (0xCB<<4)|14: assert(false);break;
         case (0xCB<<4)|15: assert(false);break;
-    /* CPX  */
-        case (0xCC<<4)|0: c->AD=_GD();c->AD<<=8;_SA(_GA()+1);break;
-        case (0xCC<<4)|1: c->AD=c->AD|_GD();_mc6800_cpx(c, c->AD);_VMA();break;
-        case (0xCC<<4)|2: _FETCH();break;
+    /* NOP  */
+        case (0xCC<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
+        case (0xCC<<4)|1: _FETCH();break;
+        case (0xCC<<4)|2: assert(false);break;
         case (0xCC<<4)|3: assert(false);break;
         case (0xCC<<4)|4: assert(false);break;
         case (0xCC<<4)|5: assert(false);break;
@@ -4012,15 +4012,15 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xCC<<4)|13: assert(false);break;
         case (0xCC<<4)|14: assert(false);break;
         case (0xCC<<4)|15: assert(false);break;
-    /* BSR  */
-        case (0xCD<<4)|0: c->AD=c->PC+(int8_t)_GD();_SA(c->SP);_VMA();break;
-        case (0xCD<<4)|1: _SD(c->PC);_WR();break;
-        case (0xCD<<4)|2: c->SP--;_VMA();break;
-        case (0xCD<<4)|3: _SA(c->SP);_VMA();break;
-        case (0xCD<<4)|4: _SD(c->PC>>8);_WR();break;
-        case (0xCD<<4)|5: c->SP--;_VMA();break;
-        case (0xCD<<4)|6: c->PC=c->AD;_VMA();break;
-        case (0xCD<<4)|7: _FETCH();break;
+    /* NOP  */
+        case (0xCD<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
+        case (0xCD<<4)|1: _FETCH();break;
+        case (0xCD<<4)|2: assert(false);break;
+        case (0xCD<<4)|3: assert(false);break;
+        case (0xCD<<4)|4: assert(false);break;
+        case (0xCD<<4)|5: assert(false);break;
+        case (0xCD<<4)|6: assert(false);break;
+        case (0xCD<<4)|7: assert(false);break;
         case (0xCD<<4)|8: assert(false);break;
         case (0xCD<<4)|9: assert(false);break;
         case (0xCD<<4)|10: assert(false);break;
@@ -4047,7 +4047,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xCE<<4)|14: assert(false);break;
         case (0xCE<<4)|15: assert(false);break;
     /* NOP  */
-        case (0xCF<<4)|0: _VMA();break;
+        case (0xCF<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0xCF<<4)|1: _FETCH();break;
         case (0xCF<<4)|2: assert(false);break;
         case (0xCF<<4)|3: assert(false);break;
@@ -4115,7 +4115,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xD2<<4)|14: assert(false);break;
         case (0xD2<<4)|15: assert(false);break;
     /* NOP  */
-        case (0xD3<<4)|0: _VMA();break;
+        case (0xD3<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0xD3<<4)|1: _FETCH();break;
         case (0xD3<<4)|2: assert(false);break;
         case (0xD3<<4)|3: assert(false);break;
@@ -4267,10 +4267,10 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xDB<<4)|13: assert(false);break;
         case (0xDB<<4)|14: assert(false);break;
         case (0xDB<<4)|15: assert(false);break;
-    /* CPX  */
-        case (0xDC<<4)|0: c->AD=_GD();c->AD<<=8;_SA(_GA()+1);break;
-        case (0xDC<<4)|1: c->AD=c->AD|_GD();_mc6800_cpx(c, c->AD);_VMA();break;
-        case (0xDC<<4)|2: _FETCH();break;
+    /* NOP  */
+        case (0xDC<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
+        case (0xDC<<4)|1: _FETCH();break;
+        case (0xDC<<4)|2: assert(false);break;
         case (0xDC<<4)|3: assert(false);break;
         case (0xDC<<4)|4: assert(false);break;
         case (0xDC<<4)|5: assert(false);break;
@@ -4285,7 +4285,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xDC<<4)|14: assert(false);break;
         case (0xDC<<4)|15: assert(false);break;
     /* NOP  */
-        case (0xDD<<4)|0: _VMA();break;
+        case (0xDD<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0xDD<<4)|1: _FETCH();break;
         case (0xDD<<4)|2: assert(false);break;
         case (0xDD<<4)|3: assert(false);break;
@@ -4387,7 +4387,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xE2<<4)|14: assert(false);break;
         case (0xE2<<4)|15: assert(false);break;
     /* NOP  */
-        case (0xE3<<4)|0: _VMA();break;
+        case (0xE3<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0xE3<<4)|1: _FETCH();break;
         case (0xE3<<4)|2: assert(false);break;
         case (0xE3<<4)|3: assert(false);break;
@@ -4539,10 +4539,10 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xEB<<4)|13: assert(false);break;
         case (0xEB<<4)|14: assert(false);break;
         case (0xEB<<4)|15: assert(false);break;
-    /* CPX  */
-        case (0xEC<<4)|0: c->AD=_GD();c->AD<<=8;_SA(_GA()+1);break;
-        case (0xEC<<4)|1: c->AD=c->AD|_GD();_mc6800_cpx(c, c->AD);_VMA();break;
-        case (0xEC<<4)|2: _FETCH();break;
+    /* NOP  */
+        case (0xEC<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
+        case (0xEC<<4)|1: _FETCH();break;
+        case (0xEC<<4)|2: assert(false);break;
         case (0xEC<<4)|3: assert(false);break;
         case (0xEC<<4)|4: assert(false);break;
         case (0xEC<<4)|5: assert(false);break;
@@ -4556,15 +4556,15 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xEC<<4)|13: assert(false);break;
         case (0xEC<<4)|14: assert(false);break;
         case (0xEC<<4)|15: assert(false);break;
-    /* JSR  */
-        case (0xED<<4)|0: c->AD=_GD()+c->IX;_SA(c->SP);_VMA();break;
-        case (0xED<<4)|1: _SD(c->PC);_WR();break;
-        case (0xED<<4)|2: c->SP--;_VMA();break;
-        case (0xED<<4)|3: _SA(c->SP);_VMA();break;
-        case (0xED<<4)|4: _SD(c->PC>>8);_WR();break;
-        case (0xED<<4)|5: c->SP--;_VMA();break;
-        case (0xED<<4)|6: c->PC=c->AD;_VMA();break;
-        case (0xED<<4)|7: _FETCH();break;
+    /* NOP  */
+        case (0xED<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
+        case (0xED<<4)|1: _FETCH();break;
+        case (0xED<<4)|2: assert(false);break;
+        case (0xED<<4)|3: assert(false);break;
+        case (0xED<<4)|4: assert(false);break;
+        case (0xED<<4)|5: assert(false);break;
+        case (0xED<<4)|6: assert(false);break;
+        case (0xED<<4)|7: assert(false);break;
         case (0xED<<4)|8: assert(false);break;
         case (0xED<<4)|9: assert(false);break;
         case (0xED<<4)|10: assert(false);break;
@@ -4659,7 +4659,7 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xF2<<4)|14: assert(false);break;
         case (0xF2<<4)|15: assert(false);break;
     /* NOP  */
-        case (0xF3<<4)|0: _VMA();break;
+        case (0xF3<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
         case (0xF3<<4)|1: _FETCH();break;
         case (0xF3<<4)|2: assert(false);break;
         case (0xF3<<4)|3: assert(false);break;
@@ -4811,10 +4811,10 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xFB<<4)|13: assert(false);break;
         case (0xFB<<4)|14: assert(false);break;
         case (0xFB<<4)|15: assert(false);break;
-    /* CPX  */
-        case (0xFC<<4)|0: c->AD=_GD();c->AD<<=8;_SA(_GA()+1);break;
-        case (0xFC<<4)|1: c->AD=c->AD|_GD();_mc6800_cpx(c, c->AD);_VMA();break;
-        case (0xFC<<4)|2: _FETCH();break;
+    /* NOP  */
+        case (0xFC<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
+        case (0xFC<<4)|1: _FETCH();break;
+        case (0xFC<<4)|2: assert(false);break;
         case (0xFC<<4)|3: assert(false);break;
         case (0xFC<<4)|4: assert(false);break;
         case (0xFC<<4)|5: assert(false);break;
@@ -4828,16 +4828,16 @@ uint64_t mc6800_tick(mc6800_t* c, uint64_t pins) {
         case (0xFC<<4)|13: assert(false);break;
         case (0xFC<<4)|14: assert(false);break;
         case (0xFC<<4)|15: assert(false);break;
-    /* JSR  */
-        case (0xFD<<4)|0: c->AD=_GD();c->AD<<=8;_SA(_GA()+1);break;
-        case (0xFD<<4)|1: c->AD=c->AD|_GD();_SA(c->SP);_VMA();break;
-        case (0xFD<<4)|2: _SD(c->PC);_WR();break;
-        case (0xFD<<4)|3: c->SP--;_VMA();break;
-        case (0xFD<<4)|4: _SA(c->SP);_VMA();break;
-        case (0xFD<<4)|5: _SD(c->PC>>8);_WR();break;
-        case (0xFD<<4)|6: c->SP--;_VMA();break;
-        case (0xFD<<4)|7: c->PC=c->AD;_VMA();break;
-        case (0xFD<<4)|8: _FETCH();break;
+    /* NOP  */
+        case (0xFD<<4)|0: fprintf(stderr, "mc6800_tick: usage of undocumented instruction\n");_VMA();break;
+        case (0xFD<<4)|1: _FETCH();break;
+        case (0xFD<<4)|2: assert(false);break;
+        case (0xFD<<4)|3: assert(false);break;
+        case (0xFD<<4)|4: assert(false);break;
+        case (0xFD<<4)|5: assert(false);break;
+        case (0xFD<<4)|6: assert(false);break;
+        case (0xFD<<4)|7: assert(false);break;
+        case (0xFD<<4)|8: assert(false);break;
         case (0xFD<<4)|9: assert(false);break;
         case (0xFD<<4)|10: assert(false);break;
         case (0xFD<<4)|11: assert(false);break;

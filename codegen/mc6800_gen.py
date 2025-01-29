@@ -53,7 +53,7 @@ ops = [
         # --          # NOP        # --         # --         # --         # --         # TAP        # TPA        # INX        # DEX        # CLV        # SEV        # CLC        # SEC        # CLI        # SEI
         [[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___]],
 
-        # SBA         # CBA        # --         # --         # --         # --         # TAB        # TBA        # --         # DAA        # --         # ABA        # --         # --         # --         # --
+        # SBA         # CBA        # --         # --         # NBA(undoc) # --         # TAB        # TBA        # --         # DAA        # --         # ABA        # --         # --         # --         # --
         [[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___],[A____,M___]],
 
         # BRA         # --         # BHI        # BLS        # BCC        # BCS        # BNE        # BEQ        # BVC        # BVS        # BPL        # BMI        # BGE        # BLT        # BGT        # BLE
@@ -705,6 +705,20 @@ def i_stx(o):
     o.t(f'_NZ16(c->IX);_SD(c->IX>>8);_WR();');
     o.t(f'_VF(false);_SA(_GA()+1);_SD(c->IX);_WR();');
 
+# Undocumented NOP instruction
+#-------------------------------------------------------------------------------
+def u_nop(o):
+    cmt(o,'NOP')
+    o.t('fprintf(stderr, "mc6800_tick: usage of undocumented instruction\\n");')
+    o.ta('')
+
+# Undocumented NBA instruction
+#-------------------------------------------------------------------------------
+def u_nba(o):
+    cmt(o,'NBA')
+    o.t('fprintf(stderr, "mc6800_tick: usage of undocumented instruction\\n");')
+    o.ta('_VF(false);c->A&=c->B;_NZ(c->A);')
+
 #-------------------------------------------------------------------------------
 def enc_op(op):
     o = opcode(op)
@@ -723,12 +737,12 @@ def enc_op(op):
     # actual instruction
     if aa == 0:
         if bb == 0:
-            if cccc == 0:        i_nop(o)
+            if cccc == 0:        u_nop(o)
             elif cccc == 1:      i_nop(o)       # NOP
-            elif cccc == 2:      i_nop(o)
-            elif cccc == 3:      i_nop(o)
-            elif cccc == 4:      i_nop(o)
-            elif cccc == 5:      i_nop(o)
+            elif cccc == 2:      u_nop(o)
+            elif cccc == 3:      u_nop(o)
+            elif cccc == 4:      u_nop(o)
+            elif cccc == 5:      u_nop(o)
             elif cccc == 6:      i_tap(o)       # TAP
             elif cccc == 7:      i_tpa(o)       # TPA
             elif cccc == 8:      i_inx(o)       # INX
@@ -742,23 +756,23 @@ def enc_op(op):
         elif bb == 1:
             if cccc == 0:        i_sba(o)       # SBA
             elif cccc == 1:      i_cba(o)       # CBA
-            elif cccc == 2:      i_nop(o)
-            elif cccc == 3:      i_nop(o)
-            elif cccc == 4:      i_nop(o)
-            elif cccc == 5:      i_nop(o)
+            elif cccc == 2:      u_nop(o)
+            elif cccc == 3:      u_nop(o)
+            elif cccc == 4:      u_nba(o)       # NBA (undocumented)
+            elif cccc == 5:      u_nop(o)
             elif cccc == 6:      i_tab(o)       # TAB
             elif cccc == 7:      i_tba(o)       # TBA
-            elif cccc == 8:      i_nop(o)
+            elif cccc == 8:      u_nop(o)
             elif cccc == 9:      i_daa(o)       # DAA TODO
-            elif cccc == 10:     i_nop(o)
+            elif cccc == 10:     u_nop(o)
             elif cccc == 11:     i_aba(o)       # ABA
-            elif cccc == 12:     i_nop(o)
-            elif cccc == 13:     i_nop(o)
-            elif cccc == 14:     i_nop(o)
-            elif cccc == 15:     i_nop(o)
+            elif cccc == 12:     u_nop(o)
+            elif cccc == 13:     u_nop(o)
+            elif cccc == 14:     u_nop(o)
+            elif cccc == 15:     u_nop(o)
         elif bb == 2:
             if cccc == 0:        i_bra(o)       # BRA
-            elif cccc == 1:      i_nop(o)
+            elif cccc == 1:      u_nop(o)
             elif cccc == 2:      i_bhi(o)       # BHI
             elif cccc == 3:      i_bls(o)       # BLS
             elif cccc == 4:      i_bcc(o)       # BCC
@@ -782,12 +796,12 @@ def enc_op(op):
             elif cccc == 5:      i_txs(o)       # TXS
             elif cccc == 6:      i_pshx(o, "A") # PSHA
             elif cccc == 7:      i_pshx(o, "B") # PSHB
-            elif cccc == 8:      i_nop(o)
+            elif cccc == 8:      u_nop(o)
             elif cccc == 9:      i_rts(o)       # RTS
-            elif cccc == 10:     i_nop(o)
+            elif cccc == 10:     u_nop(o)
             elif cccc == 11:     i_rti(o)       # RTI
-            elif cccc == 12:     i_nop(o)
-            elif cccc == 13:     i_nop(o)
+            elif cccc == 12:     u_nop(o)
+            elif cccc == 13:     u_nop(o)
             elif cccc == 14:     i_wai(o)       # WAI
             elif cccc == 15:     i_swi(o)       # SWI
     elif aa == 1:
@@ -842,8 +856,8 @@ def enc_op(op):
             elif bb == 2:        i_tst(o)
             elif bb == 3:        i_tst(o)
         elif cccc == 14:     # JMP
-            if bb == 0:          i_nop(o)
-            elif bb == 1:        i_nop(o)
+            if bb == 0:          u_nop(o)
+            elif bb == 1:        u_nop(o)
             elif bb == 2:        i_jmpidx(o)
             elif bb == 3:        i_jmpabs(o)
         elif cccc == 15:     # CLR
@@ -851,35 +865,38 @@ def enc_op(op):
             elif bb == 1:        i_clrx(o, "B")
             elif bb == 2:        i_clr(o)
             elif bb == 3:        i_clr(o)
-        else:                i_nop(o)
+        else:                u_nop(o)
     else:
         accx = aa == 2
         acc = "A" if accx else "B"
         if cccc == 0:        i_subx(o,acc)      # SUB
         if cccc == 1:        i_cmpx(o,acc)      # CMP
         if cccc == 2:        i_sbcx(o,acc)      # SBC
-        if cccc == 3:        i_nop(o)
+        if cccc == 3:        u_nop(o)
         if cccc == 4:        i_andx(o,acc)      # AND
         if cccc == 5:        i_bitx(o,acc)      # BIT
         if cccc == 6:        i_ldax(o,acc)      # LDA
         if cccc == 7:
-            if bb == 0:        i_nop(o)
+            if bb == 0:        u_nop(o)
             else:              i_stax(o,acc)    # STA
         if cccc == 8:        i_eorx(o,acc)      # EOR
         if cccc == 9:        i_adcx(o,acc)      # ADC
         if cccc == 10:       i_orax(o,acc)      # ORA
         if cccc == 11:       i_addx(o,acc)      # ADD
-        if cccc == 12:       i_cpx(o)           # CPX
-        if cccc == 13:       
-            if bb == 0:        i_bsr(o)         # BSR
-            elif bb == 1:      i_nop(o)
+        if cccc == 12:
+            if aa == 3:        u_nop(o)
+            else:              i_cpx(o)         # CPX
+        if cccc == 13:
+            if aa == 3:        u_nop(o)
+            elif bb == 0:      i_bsr(o)         # BSR
+            elif bb == 1:      u_nop(o)
             elif bb == 2:      i_jsridx(o)      # JSR
             elif bb == 3:      i_jsrabs(o)
         if cccc == 14:
             if aa == 2:        i_lds(o)         # LDS
             else:              i_ldx(o)         # LDX
         if cccc == 15:
-            if bb == 0:        i_nop(o)
+            if bb == 0:        u_nop(o)
             elif aa == 2:      i_sts(o)         # STS
             else:              i_stx(o)         # STX
 
