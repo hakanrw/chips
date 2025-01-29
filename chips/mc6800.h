@@ -284,10 +284,14 @@ static inline uint8_t _mc6800_lsr(mc6800_t* cpu, uint8_t v) {
     return v>>1;
 }
 
+// Many thanks to Dave on VCFed, https://forum.vcfed.org/index.php?members/daver2.24501/
+// for helping me find the issue in the implementation of ROL and ROR.
+// The C bit is first loaded into bit 0, then it is set by bit 7. I initially
+// misinterpreted this as C bit being set first, not after.
 static inline uint8_t _mc6800_rol(mc6800_t* cpu, uint8_t v) {
-    bool carry = v & 0x80;
+    bool carry = cpu->P & MC6800_CF;
     cpu->P &= ~(MC6800_NF|MC6800_ZF|MC6800_CF);
-    if (carry) {
+    if (v & 0x80) {
         cpu->P |= MC6800_CF;
     }
     v <<= 1;
@@ -295,7 +299,7 @@ static inline uint8_t _mc6800_rol(mc6800_t* cpu, uint8_t v) {
         v |= 1;
     }
     cpu->P = _MC6800_NZ(cpu->P, v);
-    
+
     if (((cpu->P & MC6800_NF) && !(cpu->P & MC6800_CF)) || 
         (!(cpu->P & MC6800_NF) && (cpu->P & MC6800_CF))) {
         cpu->P = _MC6800_VF(cpu->P, true);
@@ -307,9 +311,9 @@ static inline uint8_t _mc6800_rol(mc6800_t* cpu, uint8_t v) {
 }
 
 static inline uint8_t _mc6800_ror(mc6800_t* cpu, uint8_t v) {
-    bool carry = v & 0x01;
+    bool carry = cpu->P & MC6800_CF;
     cpu->P &= ~(MC6800_NF|MC6800_ZF|MC6800_CF);
-    if (carry) {
+    if (v & 0x01) {
         cpu->P |= MC6800_CF;
     }
     v >>= 1;
