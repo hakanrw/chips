@@ -306,7 +306,6 @@ static inline uint8_t _mc6800_rol(mc6800_t* cpu, uint8_t v) {
     } else {
         cpu->P = _MC6800_VF(cpu->P, false);
     }
-        
     return v;
 }
 
@@ -328,7 +327,6 @@ static inline uint8_t _mc6800_ror(mc6800_t* cpu, uint8_t v) {
     } else {
         cpu->P = _MC6800_VF(cpu->P, false);
     }
-        
     return v;
 }
 
@@ -337,13 +335,16 @@ static inline uint8_t _mc6800_add(mc6800_t* cpu, uint8_t curr, uint8_t val, bool
     if (carry_mode) {
         sum += cpu->P & MC6800_CF ? 1 : 0;
     }
-    cpu->P &= ~(MC6800_VF|MC6800_CF);
+    cpu->P &= ~(MC6800_VF|MC6800_CF|MC6800_HF);
     cpu->P = _MC6800_NZ(cpu->P, sum);
     if (~(curr^val) & (curr^sum) & 0x80) {
         cpu->P |= MC6800_VF;
     }
     if (sum & 0xFF00) {
         cpu->P |= MC6800_CF;
+    }
+    if ((sum - curr&0xF0 - val&0xF0) & 0xF0) {
+        cpu->P |= MC6800_HF;
     }
     return sum & 0xFF;
 }
@@ -386,7 +387,50 @@ static inline void _mc6800_cpx(mc6800_t* cpu, uint16_t val) {
 }
 
 static inline void _mc6800_daa(mc6800_t* cpu) {
-    fprintf(stderr,"_mc6800_daa: not implemented\n");
+    uint8_t lower = cpu->A & 0x0F;
+    uint8_t higher = cpu->A >> 4;
+    bool carry = cpu->P & MC6800_CF;
+    bool half = cpu->P & MC6800_HF;
+
+    cpu->P &= ~MC6800_CF;
+
+    if (carry) {
+        if (half) {
+            if (higher < 3 && lower < 4) {
+                cpu->A += 0x66;
+                cpu->P |= MC6800_CF;
+            }
+        } else {
+            if (higher < 3 && lower < 10) {
+                cpu->A += 0x60;
+                cpu->P |= MC6800_CF;
+            } else if (higher < 3 && lower >= 10) {
+                cpu->A += 0x66;
+                cpu->P |= MC6800_CF;
+            }
+        }
+    } else {
+        if (half) {
+            if (higher < 10 && lower < 4) {
+                cpu->A += 0x06;
+            } else if (higher >= 10 && lower < 4) {
+                cpu->A += 0x66;
+                cpu->P |= MC6800_CF;
+            }
+        } else {
+            if (higher < 10 && lower < 10) {
+                // pass
+            } else if (higher < 9 && lower >= 10) {
+                cpu->A += 0x06;
+            } else if (higher >= 10 && lower < 10) {
+                cpu->A += 0x60;
+                cpu->P |= MC6800_CF;
+            } else if (higher >= 9 && lower >= 10) {
+                cpu->A += 0x66;
+                cpu->P |= MC6800_CF;
+            }
+        }
+    }
 }
 
 static inline void _mc6800_update_brk_flags(mc6800_t* c, uint64_t pins) {
