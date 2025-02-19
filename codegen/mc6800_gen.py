@@ -927,6 +927,5 @@ if __name__ == '__main__':
 
 
 # TODO
-# implement half-carry flag on sub/add/sbc/adc
 # fix wrong cycle count on TST (must be 6 on abs, 7 on idx)
 # check cycle counts for all instructions
