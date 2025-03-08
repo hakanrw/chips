@@ -344,7 +344,7 @@ static inline uint8_t _mc6800_add(mc6800_t* cpu, uint8_t curr, uint8_t val, bool
     if (sum & 0xFF00) {
         cpu->P |= MC6800_CF;
     }
-    if ((sum - curr&0xF0 - val&0xF0) & 0xF0) {
+    if ((sum - (curr&0xF0) - (val&0xF0)) & 0xF0) {
         cpu->P |= MC6800_HF;
     }
     return sum & 0xFF;
