@@ -110,7 +110,7 @@ extern "C" {
 #define MP1000_KEY_CTRL   (0x0E)    // ctrl
 #define MP1000_KEY_BREAK  (0x03)    // break
 #define MP1000_KEY_ESC    (0x03)    // escape
-#define MP1000_KEY_RUBOUT (0x08)    // backspace
+#define MP1000_KEY_RUBOUT (0x01)    // backspace
 
 // config parameters for mp1000_init()
 typedef struct {
@@ -523,31 +523,20 @@ chips_display_info_t mp1000_display_info(mp1000_t* sys) {
 void mp1000_key_down(mp1000_t* sys, int key_code) {
     CHIPS_ASSERT(sys);
     uint8_t m = 0;
-    if (key_code >= '0' && key_code <= '9') m = MP1000_LJOY_0 + key_code - '0';
-    else if (key_code == 0x08) m = MP1000_LJOY_LEFT;
-    else if (key_code == 0x09) m = MP1000_LJOY_RIGHT;
-    else if (key_code == 0x0A) m = MP1000_LJOY_DOWN;
-    else if (key_code == 0x0B) m = MP1000_LJOY_UP;
-    //fprintf(stderr, "keydown %d\n", m);
-    kbd_key_down(&sys->joy, m);
 
-    // TODO
-    kbd_key_down(&sys->kbd, key_code);
+    if (key_code >= 0x80)
+        kbd_key_down(&sys->joy, key_code);
+    else
+        kbd_key_down(&sys->kbd, key_code);
 }
 
 void mp1000_key_up(mp1000_t* sys, int key_code) {
     CHIPS_ASSERT(sys);
-    uint8_t m = 0;
-    if (key_code >= '0' && key_code <= '9') m = MP1000_LJOY_0 + key_code - '0';
-    else if (key_code == 0x08) m = MP1000_LJOY_LEFT;
-    else if (key_code == 0x09) m = MP1000_LJOY_RIGHT;
-    else if (key_code == 0x0A) m = MP1000_LJOY_DOWN;
-    else if (key_code == 0x0B) m = MP1000_LJOY_UP;
-    //fprintf(stderr, "keyup %d\n", m);
-    kbd_key_up(&sys->joy, m);
 
-    // TODO
-    kbd_key_up(&sys->kbd, key_code);
+    if (key_code >= 0x80)
+        kbd_key_up(&sys->joy, key_code);
+    else
+        kbd_key_up(&sys->kbd, key_code);
 }
 
 uint32_t mp1000_exec(mp1000_t* sys, uint32_t micro_seconds) {
