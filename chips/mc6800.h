@@ -234,6 +234,7 @@ uint64_t mc6800_tick(mc6800_t* cpu, uint64_t pins);
 
 /*-- IMPLEMENTATION ----------------------------------------------------------*/
 #ifdef CHIPS_IMPL
+#include <stdio.h>
 #include <string.h>
 #ifndef CHIPS_ASSERT
     #include <assert.h>

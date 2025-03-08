@@ -232,6 +232,19 @@ void mp1000_init(mp1000_t* sys, const mp1000_desc_t* desc) {
     _mp1000_init_memory_map(sys);
 }
 
+void mp1000_discard(mp1000_t* sys) {
+    CHIPS_ASSERT(sys && sys->valid);
+    sys->valid = false;
+}
+
+void mp1000_reset(mp1000_t* sys) {
+    CHIPS_ASSERT(sys && sys->valid);
+    sys->pins |= MC6800_RESET;
+    mc6821_reset(&sys->pia);
+    mc6821_reset(&sys->piam);
+    mc6847_reset(&sys->vdg);
+}
+
 static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
     // tick the CPU
     pins = mc6800_tick(&sys->cpu, pins);
@@ -253,10 +266,10 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
     if (pins & MC6800_VMA) {
         if (sys->io_mapped) {
             if (addr >= 0x2000 && addr <= 0x3FFF) {
-                pia_pins |= MC6821_CS; // TODO: Fix for PIA
+                pia_pins |= MC6821_CS;
             }
             else if (addr >= 0x6000 && addr <= 0x63FF) {
-                piam_pins |= MC6821_CS; // TODO: Fix for PIA
+                piam_pins |= MC6821_CS;
             }
             else if (addr >= 0x6400 && addr <= 0x67FF) {
                 // Manual pg.23: External IO devices
@@ -277,9 +290,6 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
     {
         // this has direct effect on vdg's graphics mode
         const uint8_t pa = ~kbd_scan_columns(&sys->joy); // TODO
-
-        //fprintf(stderr, "pa: %8b\n", pa);
-
         const uint8_t pb = 0x00; // TODO
         MC6821_SET_PAB(pia_pins, pa, pb);
 
