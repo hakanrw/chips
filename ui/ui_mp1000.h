@@ -141,6 +141,9 @@ static void _ui_mp1000_draw_menu(ui_mp1000_t* ui) {
                 ui->boot_cb(ui->mp1000);
                 //ui_dbg_reboot(&ui->dbg);
             }
+            if (ImGui::MenuItem("Remove Cart")) {
+                mp1000_remove_cart(ui->mp1000);
+            }
             /*
             if (ImGui::BeginMenu("Joystick")) {
                 if (ImGui::MenuItem("None", 0, ui->mp1000->joystick_type == C64_JOYSTICKTYPE_NONE)) {

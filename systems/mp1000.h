@@ -170,6 +170,10 @@ uint32_t mp1000_save_snapshot(mp1000_t* sys, mp1000_t* dst);
 bool mp1000_load_snapshot(mp1000_t* sys, uint32_t version, mp1000_t* src);
 // tick MP1000 instance for a given number of microseconds, return number of ticks executed
 uint32_t mp1000_exec(mp1000_t* sys, uint32_t micro_seconds);
+// load a cartridge
+bool mp1000_insert_cart(mp1000_t* sys, chips_range_t data);
+// remove cartridge
+bool mp1000_remove_cart(mp1000_t* sys);
 // send a key-down event to the MP1000
 void mp1000_key_down(mp1000_t* sys, int key_code);
 // send a key-up event to the MP1000
@@ -384,7 +388,13 @@ static uint64_t _mp1000_vdg_fetch(uint64_t pins, void* user_data) {
     MC6847_SET_DATA(pins, data);
 
     pins &= ~(MC6847_AG|MC6847_AS|MC6847_INTEXT|MC6847_INV);
-    if (data & 128) pins |= MC6847_AS;
+
+    if (data & 128) { // semigraphics
+        pins |= MC6847_AS;
+    }
+    else { // internal alphanum
+        if (data & 64) pins |= MC6847_INV;
+    }
 
     return pins;
 }
@@ -580,6 +590,26 @@ void mp1000_key_up(mp1000_t* sys, int key_code) {
         kbd_key_up(&sys->joy, key_code);
     else
         kbd_key_up(&sys->kbd, key_code);
+}
+
+bool mp1000_insert_cart(mp1000_t* sys, chips_range_t data) {
+    CHIPS_ASSERT(sys && sys->valid && data.ptr);
+    bool cart_2k = data.size == 2048;
+    bool cart_4k = data.size == 4096;
+    bool cart_8k = data.size == 8192;
+    CHIPS_ASSERT(cart_2k || cart_4k || cart_8k);
+    memcpy(sys->rom_cart, data.ptr, data.size);
+
+    mp1000_reset(sys);
+
+    return true;
+}
+
+bool mp1000_remove_cart(mp1000_t* sys) {
+    memset(sys->rom_cart, 0, 0x2000);
+    mp1000_reset(sys);
+
+    return true;
 }
 
 uint32_t mp1000_exec(mp1000_t* sys, uint32_t micro_seconds) {
