@@ -320,7 +320,9 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
             pins = MC6800_COPY_DATA(pins, pia_pins);
         }
 
-        vdg_pins &= ~(MC6847_AG|MC6847_AS|MC6847_INTEXT|MC6847_INV);
+        vdg_pins &= ~(MC6847_AG|MC6847_AS|MC6847_INTEXT|MC6847_INV|MC6847_GM0);
+        vdg_pins |= (MC6847_GM2|MC6847_GM1);
+        if (pia_pins & MC6821_PB6) {vdg_pins |= MC6847_GM0; }
         if (pia_pins & MC6821_PB7) {vdg_pins |= MC6847_AG; /*fprintf(stderr, "graphics mode\n");*/}
         //printf("pia_a %b\n", sys->pia.pa.ctrl);
         //printf("pia_a ddr %b\n", sys->pia.pa.ddr);
@@ -384,16 +386,29 @@ static uint64_t _mp1000_vdg_fetch(uint64_t pins, void* user_data) {
         Fetch data into the VDG.
     */
     uint16_t addr = MC6847_GET_ADDR(pins);
-    uint8_t data = mem_rd(&sys->mem_vdg, addr);
-    MC6847_SET_DATA(pins, data);
+    pins &= ~(MC6847_AS|MC6847_INV);
 
-    pins &= ~(MC6847_AG|MC6847_AS|MC6847_INTEXT|MC6847_INV);
+    if (sys->vdg.pins & MC6847_AG) { // full graphics
+        uint8_t x = addr % 32;
+        uint8_t y = addr / 32;
+        uint8_t yo = y / 16;
 
-    if (data & 128) { // semigraphics
-        pins |= MC6847_AS;
+        uint8_t objmap = mem_rd(&sys->mem_cpu, yo*32+x);
+        uint8_t obj = objmap & 31;
+        uint8_t data = mem_rd(&sys->mem_vdg, obj*16 + y%16);
+        MC6847_SET_DATA(pins, data);
+        if (x == 0) MC6847_SET_DATA(pins, yo % 2 ? 0xF0 : 0x00);
     }
-    else { // internal alphanum
-        if (data & 64) pins |= MC6847_INV;
+    else {
+        uint8_t data = mem_rd(&sys->mem_vdg, addr);
+        MC6847_SET_DATA(pins, data);
+
+        if (data & 128) { // semigraphics
+            pins |= MC6847_AS;
+        }
+        else { // internal alphanum
+            if (data & 64) pins |= MC6847_INV;
+        }
     }
 
     return pins;
