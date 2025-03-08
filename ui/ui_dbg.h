@@ -59,8 +59,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#if !defined(UI_DBG_USE_Z80) && !defined(UI_DBG_USE_M6502)
-#error "please define UI_DBG_USE_Z80 or UI_DBG_USE_M6502"
+#if !defined(UI_DBG_USE_Z80) && !defined(UI_DBG_USE_M6502) && !defined(UI_DBG_USE_MC6800)
+#error "please define UI_DBG_USE_Z80 or UI_DBG_USE_M6502 or UI_DBG_USE_MC6800"
 #endif
 
 #ifdef __cplusplus
@@ -190,6 +190,8 @@ typedef struct ui_dbg_desc_t {
     z80_t* z80;                 // Z80 CPU to track
     #elif defined(UI_DBG_USE_M6502)
     m6502_t* m6502;             // 6502 CPU to track
+    #elif defined(UI_DBG_USE_MC6800)
+    mc6800_t* mc6800;
     #endif
     uint32_t freq_hz;               // CPU clock frequency in Hz
     uint32_t scanline_ticks;        // length of a raster line in clock cycles
@@ -213,6 +215,8 @@ typedef struct ui_dbg_state_t {
     z80_t* z80;
     #elif defined(UI_DBG_USE_M6502)
     m6502_t* m6502;
+    #elif defined(UI_DBG_USE_MC6800)
+    mc6800_t* mc6800;
     #endif
     bool stopped;
     bool external_debugger_connected;

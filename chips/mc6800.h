@@ -215,6 +215,11 @@ uint64_t mc6800_init(mc6800_t* cpu);
 /* execute one tick */
 uint64_t mc6800_tick(mc6800_t* cpu, uint64_t pins);
 
+// prepare mc6800_t snapshot for saving
+void mc6800_snapshot_onsave(mc6800_t* snapshot);
+// fixup mc6800_t snapshot after loading
+void mc6800_snapshot_onload(mc6800_t* snapshot, mc6800_t* sys);
+
 /* extract 16-bit address bus from 64-bit pins */
 #define MC6800_GET_ADDR(p) ((uint16_t)((p)&0xFFFFULL))
 /* merge 16-bit address bus value into 64-bit pins */
@@ -459,6 +464,22 @@ uint64_t mc6800_init(mc6800_t* c) {
     c->PINS = MC6800_RW | MC6800_RESET | MC6800_VMA;
     c->next_instr = true;
     return c->PINS;
+}
+
+void mc6800_snapshot_onsave(mc6800_t* snapshot) {
+    CHIPS_ASSERT(snapshot);
+    //snapshot->in_cb = 0;
+    //snapshot->out_cb = 0;
+    //snapshot->user_data = 0;
+    // TODO check
+}
+
+void mc6800_snapshot_onload(mc6800_t* snapshot, mc6800_t* sys) {
+    CHIPS_ASSERT(snapshot && sys);
+    //snapshot->in_cb = sys->in_cb;
+    //snapshot->out_cb = sys->out_cb;
+    //snapshot->user_data = sys->user_data;
+    // TODO check
 }
 
 /* set 16-bit address in 64-bit pin mask */

@@ -177,12 +177,12 @@ void ui_mc6847_draw(ui_mc6847_t* win) {
     ImGui::End();
 }
 
-void ui_m6847_save_settings(ui_mc6847_t* win, ui_settings_t* settings) {
+void ui_mc6847_save_settings(ui_mc6847_t* win, ui_settings_t* settings) {
     CHIPS_ASSERT(win && settings);
     ui_settings_add(settings, win->title, win->open);
 }
 
-void ui_m6847_load_settings(ui_mc6847_t* win, const ui_settings_t* settings) {
+void ui_mc6847_load_settings(ui_mc6847_t* win, const ui_settings_t* settings) {
     CHIPS_ASSERT(win && settings);
     win->open = ui_settings_isopen(settings, win->title);
 }

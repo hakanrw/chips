@@ -66,8 +66,8 @@ extern "C" {
 #define MP1000_SNAPSHOT_VERSION (1)
 
 #define MP1000_FREQUENCY (894750)              // clock frequency in Hz
-#define MP1000_MAX_AUDIO_SAMPLES (TODO)        // max number of audio samples in internal sample buffer
-#define MP1000_DEFAULT_AUDIO_SAMPLES (TODO)     // default number of samples in internal sample buffer
+#define MP1000_MAX_AUDIO_SAMPLES (1024)        // TODO: max number of audio samples in internal sample buffer
+#define MP1000_DEFAULT_AUDIO_SAMPLES (128)     // TODO: default number of samples in internal sample buffer
 
 // special joystick bits
 #define MP1000_LJOY_0     (0x80)
@@ -141,6 +141,13 @@ typedef struct {
     bool valid;
     chips_debug_t debug;
 
+    struct {
+        chips_audio_callback_t callback;
+        int num_samples;
+        int sample_pos;
+        float sample_buffer[MP1000_MAX_AUDIO_SAMPLES];
+    } audio;
+
     uint8_t ram[1<<16];         // general ram
     uint8_t rom_bios[0x0800];   // 2 KB BIOS ROM image
     uint8_t rom_basic[0x1000];  // 2 KB BASIC ROM image (optional)
@@ -157,6 +164,10 @@ void mp1000_discard(mp1000_t* sys);
 void mp1000_reset(mp1000_t* sys);
 // get framebuffer and display attributes
 chips_display_info_t mp1000_display_info(mp1000_t* sys);
+// save a snapshot, patches pointers to zero and offsets, returns snapshot version
+uint32_t mp1000_save_snapshot(mp1000_t* sys, mp1000_t* dst);
+// load a snapshot, returns false if snapshot versions don't match
+bool mp1000_load_snapshot(mp1000_t* sys, uint32_t version, mp1000_t* src);
 // tick MP1000 instance for a given number of microseconds, return number of ticks executed
 uint32_t mp1000_exec(mp1000_t* sys, uint32_t micro_seconds);
 // send a key-down event to the MP1000
@@ -192,6 +203,9 @@ void mp1000_init(mp1000_t* sys, const mp1000_desc_t* desc) {
     memset(sys, 0, sizeof(mp1000_t));
     sys->valid = true;
     sys->debug = desc->debug;
+    sys->audio.callback = desc->audio.callback;
+    sys->audio.num_samples = _MP1000_DEFAULT(desc->audio.num_samples, MP1000_DEFAULT_AUDIO_SAMPLES);
+    CHIPS_ASSERT(sys->audio.num_samples <= MP1000_MAX_AUDIO_SAMPLES);
     CHIPS_ASSERT(desc->roms.bios.ptr && (desc->roms.bios.size == sizeof(sys->rom_bios)));
     memcpy(sys->rom_bios, desc->roms.bios.ptr, sizeof(sys->rom_bios));
 
@@ -518,6 +532,35 @@ chips_display_info_t mp1000_display_info(mp1000_t* sys) {
     };
     CHIPS_ASSERT(((sys == 0) && (res.frame.buffer.ptr == 0)) || ((sys != 0) && (res.frame.buffer.ptr != 0)));
     return res;
+}
+
+uint32_t mp1000_save_snapshot(mp1000_t* sys, mp1000_t* dst) {
+    CHIPS_ASSERT(sys && dst);
+    *dst = *sys;
+    //chips_debug_snapshot_onsave(&dst->debug);
+    chips_audio_callback_snapshot_onsave(&dst->audio.callback);
+    mc6800_snapshot_onsave(&dst->cpu);
+    mc6847_snapshot_onsave(&dst->vdg);
+    mem_snapshot_onsave(&dst->mem_cpu, sys);
+    mem_snapshot_onsave(&dst->mem_vdg, sys);
+    return MP1000_SNAPSHOT_VERSION;
+}
+
+bool mp1000_load_snapshot(mp1000_t* sys, uint32_t version, mp1000_t* src) {
+    CHIPS_ASSERT(sys && src);
+    if (version != MP1000_SNAPSHOT_VERSION) {
+        return false;
+    }
+    static mp1000_t im;
+    im = *src;
+    //chips_debug_snapshot_onload(&im.debug, &sys->debug);
+    chips_audio_callback_snapshot_onload(&im.audio.callback, &sys->audio.callback);
+    mc6800_snapshot_onload(&im.cpu, &sys->cpu);
+    mc6847_snapshot_onload(&im.vdg, &sys->vdg);
+    mem_snapshot_onload(&im.mem_cpu, sys);
+    mem_snapshot_onload(&im.mem_vdg, sys);
+    *sys = im;
+    return true;
 }
 
 void mp1000_key_down(mp1000_t* sys, int key_code) {
