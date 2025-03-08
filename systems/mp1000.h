@@ -179,14 +179,11 @@ void mp1000_key_up(mp1000_t* sys, int key_code);
 #define _MP1000_SCREEN_WIDTH (256)
 #define _MP1000_SCREEN_HEIGHT (192)
 
+static uint64_t _mp1000_vdg_fetch(uint64_t pins, void* user_data);
 static void _mp1000_init_key_map(mp1000_t* sys);
 static void _mp1000_init_memory_map(mp1000_t* sys);
 
 #define _MP1000_DEFAULT(val,def) (((val) != 0) ? (val) : (def))
-
-static uint64_t _dumb_cb_fetch(uint64_t pins, void* user_data) {
-
-}
 
 void mp1000_init(mp1000_t* sys, const mp1000_desc_t* desc) {
     CHIPS_ASSERT(sys && desc);
@@ -224,7 +221,7 @@ void mp1000_init(mp1000_t* sys, const mp1000_desc_t* desc) {
             .size = sizeof(sys->fb),
         },
         .user_data = sys,
-        .fetch_cb = _dumb_cb_fetch,
+        .fetch_cb = _mp1000_vdg_fetch,
     });
     mc6821_init(&sys->pia);
     mc6821_init(&sys->piam);
@@ -343,8 +340,8 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
     for (int i = 0; i < 4; i++)
     {
         vdg_pins = mc6847_tick(&sys->vdg, vdg_pins);
-        uint8_t vres = mem_rd(&sys->mem_vdg, MC6847_GET_ADDR(vdg_pins));
-        MC6847_SET_DATA(vdg_pins, vres);
+        //uint8_t vres = mem_rd(&sys->mem_vdg, MC6847_GET_ADDR(vdg_pins));
+        //MC6847_SET_DATA(vdg_pins, vres);
     }
 
     if (mem_access) {
@@ -359,6 +356,21 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
             mem_wr(&sys->mem_cpu, addr, MC6800_GET_DATA(pins));
         }
     }
+
+    return pins;
+}
+
+static uint64_t _mp1000_vdg_fetch(uint64_t pins, void* user_data) {
+    mp1000_t* sys = (mp1000_t*) user_data;
+    /*
+        Fetch data into the VDG.
+    */
+    uint16_t addr = MC6847_GET_ADDR(pins);
+    uint8_t data = mem_rd(&sys->mem_vdg, addr);
+    MC6847_SET_DATA(pins, data);
+
+    pins &= ~(MC6847_AG|MC6847_AS|MC6847_INTEXT|MC6847_INV);
+    if (data & 128) pins |= MC6847_AS;
 
     return pins;
 }
@@ -492,19 +504,18 @@ chips_display_info_t mp1000_display_info(mp1000_t* sys) {
                 .size = MC6847_FRAMEBUFFER_SIZE_BYTES,
             }
         },
-        //.palette = m_dbg_palette(),
-    };
-    //if (sys) {
-    //    res.screen = mc6847_screen(&sys->vdg);
-    //}
-    //else {
-        res.screen = (chips_rect_t){
+        .screen = {
             .x = 0,
             .y = 0,
-            .width = _MP1000_SCREEN_WIDTH,
-            .height = _MP1000_SCREEN_HEIGHT
-        };
-    //};
+            .width = MC6847_DISPLAY_WIDTH,
+            .height = MC6847_DISPLAY_HEIGHT,
+        },
+        .palette = {
+            .ptr = sys ? sys->vdg.hwcolors : 0,
+            .size = MC6847_HWCOLOR_NUM * sizeof(uint32_t)
+        }
+
+    };
     CHIPS_ASSERT(((sys == 0) && (res.frame.buffer.ptr == 0)) || ((sys != 0) && (res.frame.buffer.ptr != 0)));
     return res;
 }
