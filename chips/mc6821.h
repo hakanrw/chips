@@ -382,14 +382,18 @@ static uint8_t _mc6821_read(mc6821_t* c, uint8_t addr) {
             c->pb.ctrl &= ~(MC6821_CR_IRQ1|MC6821_CR_IRQ2); // clear irq on read
             break;
         case MC6821_REG_PRA:
-            if (c->pa.ctrl & MC6821_CR_PR)
+            if (c->pa.ctrl & MC6821_CR_PR) {
                 data = c->pa.pins;
+                c->pa.ctrl &= ~(MC6821_CR_IRQ1|MC6821_CR_IRQ2); // clear irq on read TODO: check
+            }
             else
                 data = c->pa.ddr;
             break;
         case MC6821_REG_PRB:
-            if (c->pb.ctrl & MC6821_CR_PR)
+            if (c->pb.ctrl & MC6821_CR_PR) {
                 data = c->pb.pins;
+                c->pb.ctrl &= ~(MC6821_CR_IRQ1|MC6821_CR_IRQ2); // clear irq on read TODO: check
+            }
             else
                 data = c->pb.ddr;
             break;

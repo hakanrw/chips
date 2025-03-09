@@ -140,6 +140,8 @@ typedef struct {
     mem_t mem_vdg;              // VDG-visible memory mapping
     bool valid;
     chips_debug_t debug;
+    uint32_t ticks;
+    bool cb1;
 
     struct {
         chips_audio_callback_t callback;
@@ -230,6 +232,7 @@ void mp1000_init(mp1000_t* sys, const mp1000_desc_t* desc) {
 
     // initialize the hardware
     sys->io_mapped = true;
+    sys->cb1 = false;
 
     sys->pins = mc6800_init(&sys->cpu);
     mc6847_init(&sys->vdg, &(mc6847_desc_t) {
@@ -264,6 +267,7 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
     // tick the CPU
     pins = mc6800_tick(&sys->cpu, pins);
     const uint16_t addr = MC6800_GET_ADDR(pins);
+    sys->ticks++;
 
     // those pins are set each tick by the PIAs and VDG
     pins &= ~(MC6800_IRQ|MC6800_NMI);
@@ -307,6 +311,8 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
         const uint8_t pa = ~kbd_scan_columns(&sys->joy); // TODO
         const uint8_t pb = 0x00; // TODO
         MC6821_SET_PAB(pia_pins, pa, pb);
+
+        if (sys->cb1) pia_pins |= MC6821_CB1;
 
         pia_pins = mc6821_tick(&sys->pia, pia_pins);
         const uint8_t joy_lines = (~MC6821_GET_PB(pia_pins))&0xF;
@@ -355,11 +361,13 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
         }
     }
 
-    /* tick the VDG display chip (4x freq.)
+    /* tick the VDG display chip (4x freq.) TODO
     */
-    for (int i = 0; i < 4; i++)
+    //if (sys->ticks % 4 <= 3)
     {
         vdg_pins = mc6847_tick(&sys->vdg, vdg_pins);
+
+        sys->cb1 = (vdg_pins & MC6847_FS);
         //uint8_t vres = mem_rd(&sys->mem_vdg, MC6847_GET_ADDR(vdg_pins));
         //MC6847_SET_DATA(vdg_pins, vres);
     }
@@ -397,7 +405,6 @@ static uint64_t _mp1000_vdg_fetch(uint64_t pins, void* user_data) {
         uint8_t obj = objmap & 31;
         uint8_t data = mem_rd(&sys->mem_vdg, obj*16 + y%16);
         MC6847_SET_DATA(pins, data);
-        if (x == 0) MC6847_SET_DATA(pins, yo % 2 ? 0xF0 : 0x00);
     }
     else {
         uint8_t data = mem_rd(&sys->mem_vdg, addr);

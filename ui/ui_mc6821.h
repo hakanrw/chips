@@ -165,6 +165,8 @@ static void _ui_mc6821_draw_counters(ui_mc6821_t* win) {
 static void _ui_mc6821_draw_int_ctrl(ui_mc6821_t* win) {
     if (ImGui::CollapsingHeader("Control & Interrupts", ImGuiTreeNodeFlags_DefaultOpen)) {
         const mc6821_t* pia = win->pia;
+        ui_util_b8("PA Ctrl:  ", pia->pa.ctrl);  ImGui::SameLine(); ImGui::Text("(%02X)", pia->pa.ctrl);
+        ui_util_b8("PB Ctrl:  ", pia->pb.ctrl); ImGui::SameLine(); ImGui::Text("(%02X)", pia->pb.ctrl);
         /*
         ImGui::Text("ACR: %02X\n", via->acr);
         ImGui::Text("  PA Latch:      %s", M6522_ACR_PA_LATCH_ENABLE(via) ? "Enabled":"Disabled");
