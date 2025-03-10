@@ -65,7 +65,7 @@ extern "C" {
 // bump snapshot version when c64_t memory layout changes
 #define MP1000_SNAPSHOT_VERSION (1)
 
-#define MP1000_FREQUENCY (894750)              // clock frequency in Hz
+#define MP1000_FREQUENCY (894886)              // clock frequency in Hz
 #define MP1000_MAX_AUDIO_SAMPLES (1024)        // TODO: max number of audio samples in internal sample buffer
 #define MP1000_DEFAULT_AUDIO_SAMPLES (128)     // TODO: default number of samples in internal sample buffer
 
@@ -112,6 +112,8 @@ extern "C" {
 #define MP1000_KEY_ESC    (0x03)    // escape
 #define MP1000_KEY_RUBOUT (0x01)    // backspace
 
+#define MP1000_VDG_AG_LAG_TICKS (2000)
+
 // config parameters for mp1000_init()
 typedef struct {
     chips_debug_t debug;
@@ -141,6 +143,8 @@ typedef struct {
     bool valid;
     chips_debug_t debug;
     uint32_t ticks;
+    uint32_t vdg_ag_countdown;
+    bool vdg_last_ag;
     bool cb1;
 
     struct {
@@ -330,12 +334,30 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
 
         vdg_pins &= ~(MC6847_AG|MC6847_AS|MC6847_INTEXT|MC6847_INV|MC6847_GM0);
         vdg_pins |= (MC6847_GM2|MC6847_GM1);
-        if (pia_pins & MC6821_PB6) {vdg_pins |= MC6847_GM0; }
-        if (pia_pins & MC6821_PB7) {vdg_pins |= MC6847_AG; /*fprintf(stderr, "graphics mode\n");*/}
-        //printf("pia_a %b\n", sys->pia.pa.ctrl);
-        //printf("pia_a ddr %b\n", sys->pia.pa.ddr);
-        //printf("pia_b %b\n", sys->pia.pb.ctrl);
-        //printf("pia_b ddr %b\n", sys->pia.pb.ddr);
+
+        if (pia_pins & MC6821_PB6) {
+            vdg_pins |= MC6847_GM0;
+        }
+
+        /* TODO: explain/implement this better
+         *
+         * ! Arbitrary lag !
+         * due to strict timing issues, i implemented this hack which
+         * waits for some more time before switching to full graphics mode.
+         * if we do not have this lag/countdown, the score tab at the top
+         * will not be shown, as full graphics switch happens too early.
+         * TODO: investigate
+         */
+        if (pia_pins & MC6821_PB7) {
+            if (!sys->vdg_last_ag) sys->vdg_ag_countdown = MP1000_VDG_AG_LAG_TICKS;
+            if (sys->vdg_ag_countdown <= 0) vdg_pins |= MC6847_AG;
+            sys->vdg_last_ag = true;
+        }
+        else {
+            sys->vdg_last_ag = false;
+        }
+
+        if (sys->vdg_ag_countdown > 0) sys->vdg_ag_countdown--;
     }
 
     /* tick PIA-IM
@@ -365,11 +387,11 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
 
     /* tick the VDG display chip (4x freq.) TODO
     */
-    for (int i = 0; i < (sys->ticks % 2 ? 2 : 3); i++)
+    /*for (int i = 0; i < 3; i++)*/
     {
         vdg_pins = mc6847_tick(&sys->vdg, vdg_pins);
 
-        sys->cb1 = (vdg_pins & MC6847_FS);
+        sys->cb1 = !(vdg_pins & MC6847_FS);
     }
 
     if (mem_access) {
@@ -399,7 +421,7 @@ static uint64_t _mp1000_vdg_fetch(uint64_t pins, void* user_data) {
     uint16_t addr = MC6847_GET_ADDR(pins);
     pins &= ~(MC6847_AS|MC6847_INV);
 
-    if (sys->vdg.pins & MC6847_AG) { // full graphics
+    if (pins & MC6847_AG) { // full graphics
         uint8_t x = addr % 32;
         uint8_t y = addr / 32;
         uint8_t yo = y / 16;
