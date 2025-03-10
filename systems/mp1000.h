@@ -266,8 +266,10 @@ void mp1000_reset(mp1000_t* sys) {
 static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
     // tick the CPU
     pins = mc6800_tick(&sys->cpu, pins);
-    const uint16_t addr = MC6800_GET_ADDR(pins);
+    /*const */uint16_t addr = MC6800_GET_ADDR(pins);
     sys->ticks++;
+
+    //printf("PC %04x SP %04x   [%02x %02x]\n", sys->cpu.PC, sys->cpu.SP, mem_rd(&sys->mem_cpu, 0x01c9), mem_rd(&sys->mem_cpu, 0x01ca));
 
     // those pins are set each tick by the PIAs and VDG
     pins &= ~(MC6800_IRQ|MC6800_NMI);
@@ -363,16 +365,17 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
 
     /* tick the VDG display chip (4x freq.) TODO
     */
-    //if (sys->ticks % 4 <= 3)
+    for (int i = 0; i < (sys->ticks % 2 ? 2 : 3); i++)
     {
         vdg_pins = mc6847_tick(&sys->vdg, vdg_pins);
 
         sys->cb1 = (vdg_pins & MC6847_FS);
-        //uint8_t vres = mem_rd(&sys->mem_vdg, MC6847_GET_ADDR(vdg_pins));
-        //MC6847_SET_DATA(vdg_pins, vres);
     }
 
     if (mem_access) {
+        if (addr >= 0x400 && addr <= 0x1FFF) {
+            addr = addr % 0x400; // wrap memory 0x0400-0x1FFF
+        }
         if (pins & MC6800_RW) {
             // memory read
             MC6800_SET_DATA(pins, mem_rd(&sys->mem_cpu, addr));
@@ -403,8 +406,15 @@ static uint64_t _mp1000_vdg_fetch(uint64_t pins, void* user_data) {
 
         uint8_t objmap = mem_rd(&sys->mem_cpu, yo*32+x);
         uint8_t obj = objmap & 31;
+        if (yo == 11) obj = x;
+        //if (obj == 23) obj = (sys->ticks / 50000) % 32;
         uint8_t data = mem_rd(&sys->mem_vdg, obj*16 + y%16);
-        MC6847_SET_DATA(pins, data);
+        //if (obj != 20) data = 0xFF;
+//        if (obj == 23) {
+//            for (int i = 0; i < 16; i++) printf("%02x ", mem_rd(&sys->mem_vdg, 23*16+i));
+//            printf("\n");
+//        }
+        MC6847_SET_DATA(pins, /*x==0 ? (yo%2?0xFF:00):*/data);
     }
     else {
         uint8_t data = mem_rd(&sys->mem_vdg, addr);
