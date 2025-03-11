@@ -332,7 +332,7 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
             pins = MC6800_COPY_DATA(pins, pia_pins);
         }
 
-        vdg_pins &= ~(MC6847_AG|MC6847_AS|MC6847_INTEXT|MC6847_INV|MC6847_GM0);
+        vdg_pins &= ~(MC6847_AG|MC6847_AS|MC6847_INTEXT|MC6847_INV|MC6847_GM0|MC6847_CSS);
         vdg_pins |= (MC6847_GM2|MC6847_GM1);
 
         if (pia_pins & MC6821_PB6) {
@@ -350,7 +350,7 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
          */
         if (pia_pins & MC6821_PB7) {
             if (!sys->vdg_last_ag) sys->vdg_ag_countdown = MP1000_VDG_AG_LAG_TICKS;
-            if (sys->vdg_ag_countdown <= 0) vdg_pins |= MC6847_AG;
+            if (sys->vdg_ag_countdown <= 0) vdg_pins |= MC6847_AG|MC6847_CSS;
             sys->vdg_last_ag = true;
         }
         else {
@@ -419,7 +419,7 @@ static uint64_t _mp1000_vdg_fetch(uint64_t pins, void* user_data) {
         Fetch data into the VDG.
     */
     uint16_t addr = MC6847_GET_ADDR(pins);
-    pins &= ~(MC6847_AS|MC6847_INV);
+    pins &= ~(MC6847_AS|MC6847_INV|MC6847_CSS);
 
     if (pins & MC6847_AG) { // full graphics
         uint8_t x = addr % 32;
@@ -428,15 +428,11 @@ static uint64_t _mp1000_vdg_fetch(uint64_t pins, void* user_data) {
 
         uint8_t objmap = mem_rd(&sys->mem_cpu, yo*32+x);
         uint8_t obj = objmap & 31;
-        if (yo == 11) obj = x;
-        //if (obj == 23) obj = (sys->ticks / 50000) % 32;
         uint8_t data = mem_rd(&sys->mem_vdg, obj*16 + y%16);
-        //if (obj != 20) data = 0xFF;
-//        if (obj == 23) {
-//            for (int i = 0; i < 16; i++) printf("%02x ", mem_rd(&sys->mem_vdg, 23*16+i));
-//            printf("\n");
-//        }
-        MC6847_SET_DATA(pins, /*x==0 ? (yo%2?0xFF:00):*/data);
+
+        if ((objmap & 32) == 0) pins |= MC6847_CSS; // color select (bit 5)
+
+        MC6847_SET_DATA(pins, data);
     }
     else {
         uint8_t data = mem_rd(&sys->mem_vdg, addr);

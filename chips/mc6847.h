@@ -500,10 +500,10 @@ static uint64_t _mc6847_decode_scanline(mc6847_t* vdg, uint64_t pins, size_t y) 
             size_t bytes_per_row = (sub_mode < 3) ? 16 : 32;
             size_t row_height = (pins & MC6847_GM2) ? 1 : (pins & MC6847_GM1) ? 2 : 3;
             uint16_t addr = (y / row_height) * bytes_per_row;
-            uint8_t fg_color = (pins & MC6847_CSS) ? MC6847_HWCOLOR_GFX_BUFF : MC6847_HWCOLOR_GFX_GREEN;
             for (size_t x = 0; x < bytes_per_row; x++) {
                 MC6847_SET_ADDR(pins, addr++);
                 pins = vdg->fetch_cb(pins, ud);
+                uint8_t fg_color = (pins & MC6847_CSS) ? MC6847_HWCOLOR_GFX_BUFF : MC6847_HWCOLOR_GFX_GREEN;
                 uint8_t m = MC6847_GET_DATA(pins);
                 for (int p = 7; p >= 0; p--) {
                     uint8_t c = ((m>>p) & 1) ? fg_color : MC6847_HWCOLOR_BLACK;
