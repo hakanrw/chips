@@ -65,7 +65,7 @@ extern "C" {
 // bump snapshot version when c64_t memory layout changes
 #define MP1000_SNAPSHOT_VERSION (1)
 
-#define MP1000_FREQUENCY (894886)              // clock frequency in Hz
+#define MP1000_FREQUENCY (894887)              // clock frequency in Hz
 #define MP1000_MAX_AUDIO_SAMPLES (1024)        // TODO: max number of audio samples in internal sample buffer
 #define MP1000_DEFAULT_AUDIO_SAMPLES (128)     // TODO: default number of samples in internal sample buffer
 
@@ -142,14 +142,21 @@ typedef struct {
     mem_t mem_vdg;              // VDG-visible memory mapping
     bool valid;
     chips_debug_t debug;
+
+    /* VDG timing helpers */
     uint32_t ticks;
-    uint32_t vdg_ag_countdown;
 
     bool vdg_ag;
     bool vdg_fs;
-
     uint32_t vdg_ag_tick;
     uint32_t vdg_fs_tick;
+
+    // VDG hacks
+    bool vdg_ag_last_frame;
+    bool vdg_ag_compensate;
+    uint16_t vdg_ag_fs_diff_last_frame;
+    uint16_t vdg_ag_countdown;
+    /*                     */
 
     struct {
         chips_audio_callback_t callback;
@@ -316,9 +323,10 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
     }
 
     /* tick PIA
+
+       data is fed from joysticks. also, it affects VDG's graphics mode.
     */
     {
-        // this has direct effect on vdg's graphics mode
         const uint8_t pa = ~kbd_scan_columns(&sys->joy); // TODO
         const uint8_t pb = 0x00; // TODO
         MC6821_SET_PAB(pia_pins, pa, pb);
@@ -327,7 +335,6 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
 
         pia_pins = mc6821_tick(&sys->pia, pia_pins);
         const uint8_t joy_lines = (~MC6821_GET_PB(pia_pins))&0xF;
-        //fprintf(stderr, "joy lines: %8b\n", joy_lines);
         kbd_set_active_lines(&sys->joy, joy_lines);
 
         if (pia_pins & MC6821_IRQ) {
@@ -344,6 +351,10 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
             vdg_pins |= MC6847_GM0;
         }
 
+        // please see below for what this hack does re:AG miss handling
+        // you can remove this hack by leaving this boolean out of the if statement below
+        bool vdg_ag_miss_hack = (!sys->vdg_ag_compensate || sys->ticks > sys->vdg_fs_tick + sys->vdg_ag_fs_diff_last_frame);
+
         /* TODO: explain/implement this better
          *
          * ! Arbitrary lag !
@@ -353,7 +364,7 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
          * will not be shown, as full graphics switch happens too early.
          * TODO: investigate
          */
-        if (pia_pins & MC6821_PB7) {
+        if ((pia_pins & MC6821_PB7) && vdg_ag_miss_hack) {
             if (!sys->vdg_ag) {
                 sys->vdg_ag_countdown = MP1000_VDG_AG_LAG_TICKS;
                 sys->vdg_ag_tick = sys->ticks;
@@ -368,6 +379,33 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
         }
 
         if (sys->vdg_ag_countdown > 0) sys->vdg_ag_countdown--;
+
+        /* AG miss handling! */
+
+        /* this is hacky, and i do not like it, but it smoothes
+         * the visual glitch that happens sometimes on rocket
+         * patrol, when the CPU does not set MC6821_PB7 (affects AG)
+         * on various frames which lead to top bar not displaying,
+         *
+         * you can remove this part, along with the vdg_ag_miss_hack,
+         * and the emulator will still work.
+         */
+
+        if (sys->ticks == sys->vdg_fs_tick + 500) {
+            if (!sys->vdg_ag_last_frame && sys->vdg_ag) {
+                sys->vdg_ag_compensate = true;
+                // printf("%d\n", sys->vdg_ag_fs_diff_last_frame);
+            } else {
+                sys->vdg_ag_compensate = false;
+            }
+            sys->vdg_ag_last_frame = sys->vdg_ag;
+        }
+
+        if (sys->ticks == sys->vdg_ag_tick) {
+            sys->vdg_ag_fs_diff_last_frame = sys->vdg_ag_tick - sys->vdg_fs_tick;
+        }
+
+        /* end of AG miss handling */
     }
 
     /* tick PIA-IM
@@ -386,18 +424,11 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
         }
 	if ((piam_pins & (MC6821_CS|MC6821_RW)) == (MC6821_CS|MC6821_RW)) {
             pins = MC6800_COPY_DATA(pins, piam_pins);
-        //fprintf(stderr, "pia: %8b\n", MC6821_GET_PB(piam_pins));
-        //fprintf(stderr, "kbd lines: %8b\n", kbd_lines);
-        //fprintf(stderr,"piam_a %b\n", sys->piam.pa.ctrl);
-        //fprintf(stderr,"piam_a ddr %b\n", sys->piam.pa.ddr);
-        //fprintf(stderr,"piam_b %b\n", sys->piam.pb.ctrl);
-        //fprintf(stderr,"piam_b ddr %b\n", sys->piam.pb.ddr);
         }
     }
 
-    /* tick the VDG display chip (4x freq.) TODO
+    /* tick the VDG display chip
     */
-    /*for (int i = 0; i < 3; i++)*/
     {
         vdg_pins = mc6847_tick(&sys->vdg, vdg_pins);
 
@@ -459,8 +490,8 @@ static uint64_t _mp1000_vdg_fetch(uint64_t pins, void* user_data) {
             uint32_t diff = ag_tick - sys->vdg_fs_tick;
             int diff_y = diff / line_ticks;
 
-            // i don't know why it's 1.62f, investigate?
-            diff_y -= MC6847_TOP_BORDER_LINES*1.62f;
+            // i don't know why it's 1.59f, investigate?
+            diff_y -= MC6847_TOP_BORDER_LINES*1.59f;
 
             y = (int)y - diff_y > 0 ? y - diff_y : 0;
         }
