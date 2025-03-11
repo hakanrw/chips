@@ -144,8 +144,12 @@ typedef struct {
     chips_debug_t debug;
     uint32_t ticks;
     uint32_t vdg_ag_countdown;
-    bool vdg_last_ag;
-    bool cb1;
+
+    bool vdg_ag;
+    bool vdg_fs;
+
+    uint32_t vdg_ag_tick;
+    uint32_t vdg_fs_tick;
 
     struct {
         chips_audio_callback_t callback;
@@ -236,7 +240,8 @@ void mp1000_init(mp1000_t* sys, const mp1000_desc_t* desc) {
 
     // initialize the hardware
     sys->io_mapped = true;
-    sys->cb1 = false;
+    sys->vdg_ag = false;
+    sys->vdg_fs = false;
 
     sys->pins = mc6800_init(&sys->cpu);
     mc6847_init(&sys->vdg, &(mc6847_desc_t) {
@@ -318,7 +323,7 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
         const uint8_t pb = 0x00; // TODO
         MC6821_SET_PAB(pia_pins, pa, pb);
 
-        if (sys->cb1) pia_pins |= MC6821_CB1;
+        if (sys->vdg_fs) pia_pins |= MC6821_CB1;
 
         pia_pins = mc6821_tick(&sys->pia, pia_pins);
         const uint8_t joy_lines = (~MC6821_GET_PB(pia_pins))&0xF;
@@ -349,12 +354,17 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
          * TODO: investigate
          */
         if (pia_pins & MC6821_PB7) {
-            if (!sys->vdg_last_ag) sys->vdg_ag_countdown = MP1000_VDG_AG_LAG_TICKS;
-            if (sys->vdg_ag_countdown <= 0) vdg_pins |= MC6847_AG|MC6847_CSS;
-            sys->vdg_last_ag = true;
+            if (!sys->vdg_ag) {
+                sys->vdg_ag_countdown = MP1000_VDG_AG_LAG_TICKS;
+                sys->vdg_ag_tick = sys->ticks;
+            }
+            if (sys->vdg_ag_countdown <= 0) {
+                vdg_pins |= MC6847_AG|MC6847_CSS;
+            }
+            sys->vdg_ag = true;
         }
         else {
-            sys->vdg_last_ag = false;
+            sys->vdg_ag = false;
         }
 
         if (sys->vdg_ag_countdown > 0) sys->vdg_ag_countdown--;
@@ -391,7 +401,13 @@ static uint64_t _mp1000_tick(mp1000_t* sys, uint64_t pins) {
     {
         vdg_pins = mc6847_tick(&sys->vdg, vdg_pins);
 
-        sys->cb1 = !(vdg_pins & MC6847_FS);
+        bool fs = !(vdg_pins & MC6847_FS);
+
+        if (!sys->vdg_fs && fs) {
+            sys->vdg_fs_tick = sys->ticks;
+        }
+
+        sys->vdg_fs = fs;
     }
 
     if (mem_access) {
@@ -424,6 +440,31 @@ static uint64_t _mp1000_vdg_fetch(uint64_t pins, void* user_data) {
     if (pins & MC6847_AG) { // full graphics
         uint8_t x = addr % 32;
         uint8_t y = addr / 32;
+
+        uint32_t ag_tick = sys->vdg_ag_tick + MP1000_VDG_AG_LAG_TICKS;
+        if (ag_tick > sys->vdg_fs_tick) {
+           /* TODO: explain/implement this better
+            *
+            * ! Second arbitrary lag !
+            * due to strict timing issues, i implemented this hack which
+            * deceives the VDG by feeding data from earlier bytes (if
+            * the AG pin was set after FS)
+            * the reason for this is that, on real hardware, the VDG
+            * starts rendering from scratch mid-frame if AG was set after
+            * the start of the frame (FS), which is the case for Rocket Patrol.
+            */
+
+            /* from mc6847.h */
+            uint32_t line_ticks = 228LL * MP1000_FREQUENCY / MC6847_TICK_HZ;
+            uint32_t diff = ag_tick - sys->vdg_fs_tick;
+            int diff_y = diff / line_ticks;
+
+            // i don't know why it's 1.62f, investigate?
+            diff_y -= MC6847_TOP_BORDER_LINES*1.62f;
+
+            y = (int)y - diff_y > 0 ? y - diff_y : 0;
+        }
+
         uint8_t yo = y / 16;
 
         uint8_t objmap = mem_rd(&sys->mem_cpu, yo*32+x);
